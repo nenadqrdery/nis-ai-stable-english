@@ -57,7 +57,12 @@ export const supabaseService = {
       .order('uploaded_at', { ascending: false });
     
     if (error) throw error;
-    return data || [];
+    
+    return (data || []).map(doc => ({
+      ...doc,
+      type: doc.type as 'pdf' | 'txt',
+      chunks: doc.chunks || []
+    }));
   },
 
   async saveDocument(document: Omit<DocumentData, 'id' | 'uploaded_at'>): Promise<void> {
@@ -117,7 +122,11 @@ export const supabaseService = {
       .order('timestamp', { ascending: true });
     
     if (error) throw error;
-    return data || [];
+    
+    return (data || []).map(msg => ({
+      ...msg,
+      role: msg.role as 'user' | 'assistant'
+    }));
   },
 
   async saveMessage(message: Omit<MessageData, 'id' | 'timestamp'>): Promise<void> {
