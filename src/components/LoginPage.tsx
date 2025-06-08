@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -76,14 +77,24 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         // Get user profile
         const profile = await supabaseService.getUserProfile(data.user.id);
         
-        onLogin({
+        const userData = {
           email: data.user.email || '',
           role: data.user.email === 'pixunit.nenad@gmail.com' ? 'admin' : 'user',
           name: profile ? `${profile.first_name} ${profile.last_name}` : data.user.email || '',
           firstName: profile?.first_name,
           lastName: profile?.last_name
-        });
-        toast.success('Dobrodošli!');
+        } as User;
+        
+        onLogin(userData);
+        
+        // Show welcome message with proper positioning and auto-dismiss
+        setTimeout(() => {
+          toast.success('Dobrodošli!', {
+            duration: 3000,
+            position: 'top-center',
+            className: 'mt-20'
+          });
+        }, 100);
       }
     } catch (error) {
       toast.error('Greška pri prijavljivanju. Pokušajte ponovo.');

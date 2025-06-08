@@ -11,11 +11,37 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Check for existing session first
+    const initializeAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          const profile = await supabaseService.getUserProfile(session.user.id);
+          
+          setUser({
+            email: session.user.email || '',
+            role: session.user.email === 'pixunit.nenad@gmail.com' ? 'admin' : 'user',
+            name: profile ? `${profile.first_name} ${profile.last_name}` : session.user.email || '',
+            firstName: profile?.first_name,
+            lastName: profile?.last_name
+          });
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeAuth();
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
+        
         if (session?.user) {
-          // Fetch user profile
           const profile = await supabaseService.getUserProfile(session.user.id);
           
           setUser({
@@ -28,25 +54,12 @@ const Index = () => {
         } else {
           setUser(null);
         }
-        setIsLoading(false);
+        
+        if (!isLoading) {
+          setIsLoading(false);
+        }
       }
     );
-
-    // Check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        const profile = await supabaseService.getUserProfile(session.user.id);
-        
-        setUser({
-          email: session.user.email || '',
-          role: session.user.email === 'pixunit.nenad@gmail.com' ? 'admin' : 'user',
-          name: profile ? `${profile.first_name} ${profile.last_name}` : session.user.email || '',
-          firstName: profile?.first_name,
-          lastName: profile?.last_name
-        });
-      }
-      setIsLoading(false);
-    });
 
     return () => subscription.unsubscribe();
   }, []);
@@ -56,8 +69,14 @@ const Index = () => {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
+    try {
+      console.log('Logging out user...');
+      await supabase.auth.signOut();
+      setUser(null);
+      console.log('User logged out successfully');
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
   };
 
   if (isLoading) {
