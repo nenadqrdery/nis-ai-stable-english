@@ -11,57 +11,78 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing session first
+    let mounted = true;
+
+    // Initialize auth state
     const initializeAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         
-        if (session?.user) {
-          const profile = await supabaseService.getUserProfile(session.user.id);
-          
-          setUser({
-            email: session.user.email || '',
-            role: session.user.email === 'pixunit.nenad@gmail.com' ? 'admin' : 'user',
-            name: profile ? `${profile.first_name} ${profile.last_name}` : session.user.email || '',
-            firstName: profile?.first_name,
-            lastName: profile?.last_name
-          });
+        if (mounted) {
+          if (session?.user) {
+            const profile = await supabaseService.getUserProfile(session.user.id);
+            
+            setUser({
+              email: session.user.email || '',
+              role: session.user.email === 'pixunit.nenad@gmail.com' ? 'admin' : 'user',
+              name: profile ? `${profile.first_name} ${profile.last_name}` : session.user.email || '',
+              firstName: profile?.first_name,
+              lastName: profile?.last_name
+            });
+          } else {
+            setUser(null);
+          }
+          setIsLoading(false);
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
-      } finally {
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     };
-
-    initializeAuth();
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email);
         
+        if (!mounted) return;
+        
         if (session?.user) {
-          const profile = await supabaseService.getUserProfile(session.user.id);
-          
-          setUser({
-            email: session.user.email || '',
-            role: session.user.email === 'pixunit.nenad@gmail.com' ? 'admin' : 'user',
-            name: profile ? `${profile.first_name} ${profile.last_name}` : session.user.email || '',
-            firstName: profile?.first_name,
-            lastName: profile?.last_name
-          });
+          try {
+            const profile = await supabaseService.getUserProfile(session.user.id);
+            
+            setUser({
+              email: session.user.email || '',
+              role: session.user.email === 'pixunit.nenad@gmail.com' ? 'admin' : 'user',
+              name: profile ? `${profile.first_name} ${profile.last_name}` : session.user.email || '',
+              firstName: profile?.first_name,
+              lastName: profile?.last_name
+            });
+          } catch (error) {
+            console.error('Error fetching user profile:', error);
+            setUser({
+              email: session.user.email || '',
+              role: session.user.email === 'pixunit.nenad@gmail.com' ? 'admin' : 'user',
+              name: session.user.email || '',
+              firstName: undefined,
+              lastName: undefined
+            });
+          }
         } else {
           setUser(null);
-        }
-        
-        if (!isLoading) {
-          setIsLoading(false);
         }
       }
     );
 
-    return () => subscription.unsubscribe();
+    // Initialize auth
+    initializeAuth();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleLogin = (userData: User) => {
