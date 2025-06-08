@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { User } from '../types/auth';
 import { Chat, Message } from '../types/chat';
@@ -174,30 +173,32 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ user, onLogout }) => {
   };
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-white">
-      <ChatHeader
-        user={user}
-        onLogout={onLogout}
-        onNewChat={startNewChat}
-        onShowHistory={() => setShowHistory(true)}
-        onShowUpload={() => setShowUpload(true)}
-      />
+    <div className="h-screen flex flex-col bg-white overflow-hidden">
+      {/* Fixed Header */}
+      <div className="flex-shrink-0">
+        <ChatHeader
+          user={user}
+          onLogout={onLogout}
+          onNewChat={startNewChat}
+          onShowHistory={() => setShowHistory(true)}
+          onShowUpload={() => setShowUpload(true)}
+        />
+      </div>
       
-      {/* Main content area with proper spacing for fixed header */}
-      <div className="flex-1 flex flex-col pt-16 pb-4">
-        {/* Scrollable messages area */}
-        <div className="flex-1 overflow-hidden">
+      {/* Scrollable Messages Area - This is the red-marked area */}
+      <div className="flex-1 overflow-hidden pt-16">
+        <div className="h-full overflow-y-auto">
           <ChatMessages 
             messages={currentChat?.messages || []} 
             isLoading={isLoading}
           />
           <div ref={messagesEndRef} />
         </div>
-        
-        {/* Fixed input area */}
-        <div className="flex-shrink-0 border-t bg-white">
-          <ChatInput onSendMessage={sendMessage} disabled={isLoading} />
-        </div>
+      </div>
+      
+      {/* Fixed Input Area */}
+      <div className="flex-shrink-0">
+        <ChatInput onSendMessage={sendMessage} disabled={isLoading} />
       </div>
 
       {showUpload && user.role === 'admin' && (
