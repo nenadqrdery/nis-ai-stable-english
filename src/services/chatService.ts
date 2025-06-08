@@ -131,8 +131,15 @@ const findRelevantContent = (query: string, documents: any[]): string[] => {
   const scoredChunks: { chunk: string; score: number; source: string }[] = [];
 
   documents.forEach(doc => {
+    const uniqueChunks = new Set<string>();
+
     doc.chunks.forEach((chunk: string) => {
-      const chunkLower = chunk.toLowerCase();
+      const cleanedChunk = chunk.trim();
+      if (!cleanedChunk || uniqueChunks.has(cleanedChunk)) return;
+
+      uniqueChunks.add(cleanedChunk);
+
+      const chunkLower = cleanedChunk.toLowerCase();
       let score = 0;
 
       queryWords.forEach(word => {
@@ -144,17 +151,18 @@ const findRelevantContent = (query: string, documents: any[]): string[] => {
       });
 
       if (score > 0) {
-        scoredChunks.push({ 
-          chunk: `[From ${doc.name}]: ${chunk}`, 
+        scoredChunks.push({
+          chunk: `[From ${doc.name}]: ${cleanedChunk}`,
           score,
-          source: doc.name 
+          source: doc.name
         });
       }
     });
   });
 
+  // Sort globally across all documents and return top N chunks (from multiple files)
   return scoredChunks
     .sort((a, b) => b.score - a.score)
-    .slice(0, 8)
+    .slice(0, 10)
     .map(item => item.chunk);
 };
