@@ -176,3 +176,10 @@ const findRelevantContent = (query: string, documents: any[]): { chunks: string[
 
   return { chunks: finalChunks, sources: sourcesUsed };
 };
+
+// Add default export as a simple component that redirects to App
+const Index = () => {
+  return null;
+};
+
+export default Index;
