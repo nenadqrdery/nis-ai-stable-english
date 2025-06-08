@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bot, Mail, Lock } from 'lucide-react';
-import { User, LoginCredentials } from '../types/auth';
+import { Bot, Mail, Lock, User as UserIcon } from 'lucide-react';
+import { User, SignUpData } from '../types/auth';
+import { supabase } from '@/integrations/supabase/client';
+import { supabaseService } from '../services/supabaseService';
 import { toast } from 'sonner';
 
 interface LoginPageProps {
@@ -13,25 +15,45 @@ interface LoginPageProps {
 }
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
-  const [credentials, setCredentials] = useState<LoginCredentials>({
+  const [isSignUp, setIsSignUp] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [signUpData, setSignUpData] = useState<SignUpData>({
+    firstName: '',
+    lastName: '',
     email: '',
     password: ''
   });
-  const [isLoading, setIsLoading] = useState(false);
+  const [loginData, setLoginData] = useState({
+    email: '',
+    password: ''
+  });
 
-  // Demo accounts
-  const demoAccounts = {
-    admin: {
-      email: 'pixunit.nenad@gmail.com',
-      password: 'Skikson1717!',
-      role: 'admin' as const,
-      name: 'Admin User'
-    },
-    user: {
-      email: 'milapreradovic@gmail.com',
-      password: 'Skikson1717!',
-      role: 'user' as const,
-      name: 'User'
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: signUpData.email,
+        password: signUpData.password,
+        options: {
+          data: {
+            first_name: signUpData.firstName,
+            last_name: signUpData.lastName
+          },
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) {
+        toast.error(error.message);
+      } else if (data.user) {
+        toast.success('Registracija uspešna! Proverite email za potvrdu.');
+      }
+    } catch (error) {
+      toast.error('Greška pri registraciji. Pokušajte ponovo.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -40,40 +62,52 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     setIsLoading(true);
 
     try {
-      // Check credentials against demo accounts
-      const adminAccount = demoAccounts.admin;
-      const userAccount = demoAccounts.user;
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: loginData.email,
+        password: loginData.password
+      });
 
-      if (credentials.email === adminAccount.email && credentials.password === adminAccount.password) {
+      if (error) {
+        toast.error('Neispravni podaci. Pokušajte ponovo.');
+      } else if (data.user) {
+        // Get user profile
+        const profile = await supabaseService.getUserProfile(data.user.id);
+        
         onLogin({
-          email: adminAccount.email,
-          role: adminAccount.role,
-          name: adminAccount.name
+          email: data.user.email || '',
+          role: data.user.email === 'pixunit.nenad@gmail.com' ? 'admin' : 'user',
+          name: profile ? `${profile.first_name} ${profile.last_name}` : data.user.email || '',
+          firstName: profile?.first_name,
+          lastName: profile?.last_name
         });
-        toast.success('Welcome back, Admin!');
-      } else if (credentials.email === userAccount.email && credentials.password === userAccount.password) {
-        onLogin({
-          email: userAccount.email,
-          role: userAccount.role,
-          name: userAccount.name
-        });
-        toast.success('Welcome back!');
-      } else {
-        toast.error('Invalid credentials. Please try again.');
+        toast.success('Dobrodošli!');
       }
     } catch (error) {
-      toast.error('Login failed. Please try again.');
+      toast.error('Greška pri prijavljivanju. Pokušajte ponovo.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDemoLogin = (accountType: 'admin' | 'user') => {
-    const account = demoAccounts[accountType];
-    setCredentials({
-      email: account.email,
-      password: account.password
-    });
+  const handleForgotPassword = async () => {
+    if (!loginData.email) {
+      toast.error('Unesite email adresu');
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(loginData.email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      });
+
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success('Link za resetovanje lozinke je poslat na email');
+      }
+    } catch (error) {
+      toast.error('Greška pri slanju linka za resetovanje');
+    }
   };
 
   return (
@@ -86,78 +120,164 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           <div>
             <CardTitle className="text-2xl font-bold text-gray-900">Knowledge Bot</CardTitle>
             <CardDescription className="text-gray-600 mt-2">
-              Your intelligent document assistant
+              Vaš inteligentni asistent za dokumente
             </CardDescription>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="text-center">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Sign In</h2>
-            <p className="text-gray-600 text-sm">Enter your credentials to access the chatbot</p>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+              {isSignUp ? 'Registracija' : 'Prijavljivanje'}
+            </h2>
+            <p className="text-gray-600 text-sm">
+              {isSignUp 
+                ? 'Kreirajte novi nalog da pristupite chatbotu'
+                : 'Unesite podatke da pristupite chatbotu'
+              }
+            </p>
           </div>
           
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-700 font-medium">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={credentials.email}
-                  onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
-                  className="pl-10 h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500"
-                  required
-                />
+          {isSignUp ? (
+            <form onSubmit={handleSignUp} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName" className="text-gray-700 font-medium">Ime</Label>
+                  <div className="relative">
+                    <UserIcon className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="firstName"
+                      type="text"
+                      placeholder="Vaše ime"
+                      value={signUpData.firstName}
+                      onChange={(e) => setSignUpData({ ...signUpData, firstName: e.target.value })}
+                      className="pl-10 h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="lastName" className="text-gray-700 font-medium">Prezime</Label>
+                  <div className="relative">
+                    <UserIcon className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="lastName"
+                      type="text"
+                      placeholder="Vaše prezime"
+                      value={signUpData.lastName}
+                      onChange={(e) => setSignUpData({ ...signUpData, lastName: e.target.value })}
+                      className="pl-10 h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500"
+                      required
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-700 font-medium">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={credentials.password}
-                  onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
-                  className="pl-10 h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500"
-                  required
-                />
+              
+              <div className="space-y-2">
+                <Label htmlFor="signupEmail" className="text-gray-700 font-medium">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="signupEmail"
+                    type="email"
+                    placeholder="Unesite email"
+                    value={signUpData.email}
+                    onChange={(e) => setSignUpData({ ...signUpData, email: e.target.value })}
+                    className="pl-10 h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500"
+                    required
+                  />
+                </div>
               </div>
-            </div>
-            
-            <Button 
-              type="submit" 
-              className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-200 transform hover:scale-[1.02]"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Signing In...' : 'Sign In'}
-            </Button>
-          </form>
+              
+              <div className="space-y-2">
+                <Label htmlFor="signupPassword" className="text-gray-700 font-medium">Lozinka</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="signupPassword"
+                    type="password"
+                    placeholder="Unesite lozinku"
+                    value={signUpData.password}
+                    onChange={(e) => setSignUpData({ ...signUpData, password: e.target.value })}
+                    className="pl-10 h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <Button 
+                type="submit" 
+                className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-200 transform hover:scale-[1.02]"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Registruje se...' : 'Registruj se'}
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="loginEmail" className="text-gray-700 font-medium">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="loginEmail"
+                    type="email"
+                    placeholder="Unesite email"
+                    value={loginData.email}
+                    onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                    className="pl-10 h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="loginPassword" className="text-gray-700 font-medium">Lozinka</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="loginPassword"
+                    type="password"
+                    placeholder="Unesite lozinku"
+                    value={loginData.password}
+                    onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                    className="pl-10 h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <Button 
+                type="submit" 
+                className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-200 transform hover:scale-[1.02]"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Prijavljivanje...' : 'Prijavite se'}
+              </Button>
+              
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full text-sm text-purple-600 hover:text-purple-700"
+                onClick={handleForgotPassword}
+              >
+                Zaboravili ste lozinku?
+              </Button>
+            </form>
+          )}
           
-          <div className="space-y-3">
-            <div className="text-center">
-              <p className="text-gray-500 text-sm font-medium">Demo Accounts:</p>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                variant="outline"
-                onClick={() => handleDemoLogin('admin')}
-                className="h-10 text-sm border-gray-200 hover:bg-purple-50 hover:border-purple-300"
-              >
-                Admin Login
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => handleDemoLogin('user')}
-                className="h-10 text-sm border-gray-200 hover:bg-blue-50 hover:border-blue-300"
-              >
-                User Login
-              </Button>
-            </div>
+          <div className="text-center">
+            <Button
+              type="button"
+              variant="ghost"
+              className="text-sm text-gray-600 hover:text-gray-900"
+              onClick={() => setIsSignUp(!isSignUp)}
+            >
+              {isSignUp 
+                ? 'Već imate nalog? Prijavite se'
+                : 'Nemate nalog? Registrujte se'
+              }
+            </Button>
           </div>
         </CardContent>
       </Card>

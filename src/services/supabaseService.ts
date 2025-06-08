@@ -27,6 +27,14 @@ export interface MessageData {
   timestamp: string;
 }
 
+export interface ProfileData {
+  id: string;
+  first_name: string;
+  last_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export const supabaseService = {
   // Admin Settings
   async getApiKey(): Promise<string | null> {
@@ -47,6 +55,22 @@ export const supabaseService = {
         setting_value: apiKey,
         updated_at: new Date().toISOString()
       });
+  },
+
+  // User Profiles
+  async getUserProfile(userId: string): Promise<ProfileData | null> {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+    
+    if (error) {
+      console.error('Error fetching user profile:', error);
+      return null;
+    }
+    
+    return data;
   },
 
   // Documents

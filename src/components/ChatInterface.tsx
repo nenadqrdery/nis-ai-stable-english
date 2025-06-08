@@ -72,7 +72,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ user, onLogout }) => {
   const startNewChat = async () => {
     const newChat: Chat = {
       id: `chat-${Date.now()}`,
-      title: 'New Chat',
+      title: 'Novi razgovor',
       messages: [],
       createdAt: new Date(),
       updatedAt: new Date()
@@ -90,7 +90,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ user, onLogout }) => {
       setShowHistory(false);
     } catch (error) {
       console.error('Error creating new chat:', error);
-      toast.error('Failed to create new chat');
+      toast.error('Neuspešno kreiranje novog razgovora');
     }
   };
 
@@ -167,7 +167,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ user, onLogout }) => {
 
     } catch (error) {
       console.error('Error generating response:', error);
-      toast.error('Failed to generate response. Please try again.');
+      toast.error('Neuspešno generisanje odgovora. Pokušajte ponovo.');
     } finally {
       setIsLoading(false);
     }
@@ -183,13 +183,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ user, onLogout }) => {
         onShowUpload={() => setShowUpload(true)}
       />
       
-      <div className="flex-1 flex overflow-hidden">
-        <div className="flex-1 flex flex-col">
+      {/* Main content area with proper spacing for fixed header */}
+      <div className="flex-1 flex flex-col pt-16 pb-4">
+        {/* Scrollable messages area */}
+        <div className="flex-1 overflow-hidden">
           <ChatMessages 
             messages={currentChat?.messages || []} 
             isLoading={isLoading}
           />
           <div ref={messagesEndRef} />
+        </div>
+        
+        {/* Fixed input area */}
+        <div className="flex-shrink-0 border-t bg-white">
           <ChatInput onSendMessage={sendMessage} disabled={isLoading} />
         </div>
       </div>

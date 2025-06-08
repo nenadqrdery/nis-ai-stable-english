@@ -37,8 +37,8 @@ const MobileNav: React.FC<MobileNavProps> = ({
       <SheetContent side="right" className="w-64">
         <div className="flex flex-col space-y-4 mt-8">
           <div className="pb-4 border-b">
-            <p className="font-medium text-gray-900">{user.name}</p>
-            <p className="text-sm text-gray-500">({user.role})</p>
+            <p className="font-medium text-gray-900">{user.firstName || user.name}</p>
+            <p className="text-sm text-gray-500">({user.role === 'admin' ? 'Administrator' : 'Korisnik'})</p>
           </div>
           
           <Button
@@ -47,7 +47,7 @@ const MobileNav: React.FC<MobileNavProps> = ({
             onClick={() => handleAction(onNewChat)}
           >
             <Plus className="w-4 h-4 mr-2" />
-            New Chat
+            Novi razgovor
           </Button>
           
           <Button
@@ -56,7 +56,7 @@ const MobileNav: React.FC<MobileNavProps> = ({
             onClick={() => handleAction(onShowHistory)}
           >
             <History className="w-4 h-4 mr-2" />
-            Chat History
+            Istorija razgovora
           </Button>
 
           {user.role === 'admin' && (
@@ -66,7 +66,7 @@ const MobileNav: React.FC<MobileNavProps> = ({
               onClick={() => handleAction(onShowUpload)}
             >
               <Upload className="w-4 h-4 mr-2" />
-              Upload Documents
+              Otpremanje dokumenata
             </Button>
           )}
 
@@ -76,7 +76,7 @@ const MobileNav: React.FC<MobileNavProps> = ({
             onClick={() => handleAction(onLogout)}
           >
             <LogOut className="w-4 h-4 mr-2" />
-            Logout
+            Odjava
           </Button>
         </div>
       </SheetContent>
