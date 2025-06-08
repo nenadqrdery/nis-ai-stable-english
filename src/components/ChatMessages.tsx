@@ -19,8 +19,8 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({ messages, isLoading }) => {
           </div>
           <h3 className="text-xl font-semibold text-gray-900">Welcome to Knowledge Bot</h3>
           <p className="text-gray-600">
-            I'm here to help you with questions based on your uploaded documents. 
-            Start by asking me anything about your knowledge base!
+            Ja sam tvoj lični pomoćnik za HSE i bezbednost na radu.
+Slobodno postavi bilo koje pitanje u vezi sa pravilima, procedurama ili bezbednosnim situacijama – tu sam da ti pomognem!
           </p>
         </div>
       </div>
