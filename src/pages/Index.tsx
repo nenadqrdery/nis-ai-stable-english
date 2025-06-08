@@ -13,63 +13,7 @@ const Index = () => {
   useEffect(() => {
     let mounted = true;
 
-    // Initialize auth state with timeout fallback
-    const initializeAuth = async () => {
-      try {
-        console.log('Starting auth initialization...');
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Error getting session:', error);
-          if (mounted) {
-            setUser(null);
-            setIsLoading(false);
-          }
-          return;
-        }
-        
-        if (!mounted) return;
-        
-        if (session?.user) {
-          console.log('Found existing session for user:', session.user.email);
-          try {
-            const profile = await supabaseService.getUserProfile(session.user.id);
-            
-            setUser({
-              email: session.user.email || '',
-              role: session.user.email === 'pixunit.nenad@gmail.com' ? 'admin' : 'user',
-              name: profile ? `${profile.first_name} ${profile.last_name}` : session.user.email || '',
-              firstName: profile?.first_name,
-              lastName: profile?.last_name
-            });
-          } catch (profileError) {
-            console.error('Error fetching user profile:', profileError);
-            // Still set user even if profile fetch fails
-            setUser({
-              email: session.user.email || '',
-              role: session.user.email === 'pixunit.nenad@gmail.com' ? 'admin' : 'user',
-              name: session.user.email || '',
-              firstName: undefined,
-              lastName: undefined
-            });
-          }
-        } else {
-          console.log('No existing session found');
-          setUser(null);
-        }
-        
-        setIsLoading(false);
-        console.log('Auth initialization completed');
-      } catch (error) {
-        console.error('Error during auth initialization:', error);
-        if (mounted) {
-          setUser(null);
-          setIsLoading(false);
-        }
-      }
-    };
-
-    // Set up auth state listener
+    // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email);
@@ -101,21 +45,53 @@ const Index = () => {
           setUser(null);
         }
         
-        // Ensure loading is false after auth state change
         setIsLoading(false);
       }
     );
 
+    // Initialize auth state
+    const initializeAuth = async () => {
+      try {
+        console.log('Checking for existing session...');
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          if (mounted) {
+            setUser(null);
+            setIsLoading(false);
+          }
+          return;
+        }
+        
+        if (!mounted) return;
+        
+        if (session?.user) {
+          console.log('Found existing session for user:', session.user.email);
+          // Don't set loading to false here - let the auth state change handler do it
+        } else {
+          console.log('No existing session found');
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Error during auth initialization:', error);
+        if (mounted) {
+          setUser(null);
+          setIsLoading(false);
+        }
+      }
+    };
+
     // Initialize auth
     initializeAuth();
 
-    // Fallback timeout to prevent infinite loading
+    // Fallback timeout only as safety net
     const timeoutId = setTimeout(() => {
       if (mounted && isLoading) {
         console.warn('Auth initialization timeout - forcing loading to false');
         setIsLoading(false);
       }
-    }, 5000); // 5 second timeout
+    }, 10000); // Increased to 10 seconds as true safety net
 
     return () => {
       mounted = false;
@@ -131,14 +107,11 @@ const Index = () => {
   const handleLogout = async () => {
     try {
       console.log('Logging out user...');
-      setIsLoading(true);
       await supabase.auth.signOut();
       setUser(null);
-      setIsLoading(false);
       console.log('User logged out successfully');
     } catch (error) {
       console.error('Error during logout:', error);
-      setIsLoading(false);
     }
   };
 
