@@ -1,7 +1,6 @@
 import { supabaseService } from './supabaseService';
 
 export const generateChatTitle = (firstMessage: string): string => {
-  // Simple title generation from first message
   const words = firstMessage.split(' ').slice(0, 5);
   let title = words.join(' ');
   if (firstMessage.split(' ').length > 5) {
@@ -12,13 +11,11 @@ export const generateChatTitle = (firstMessage: string): string => {
 
 export const generateResponse = async (message: string, user: any): Promise<string> => {
   try {
-    // Get API key from Supabase
     const apiKey = await supabaseService.getApiKey();
     if (!apiKey) {
       return "I need an OpenAI API key to function. Please ask an admin to configure it in the document upload section.";
     }
 
-    // Get documents from Supabase
     const documents = await supabaseService.getDocuments();
     let knowledgeBase = '';
 
@@ -27,10 +24,17 @@ export const generateResponse = async (message: string, user: any): Promise<stri
       knowledgeBase = relevantChunks.join('\n\n');
     }
 
-    // Detect vague follow-up requests
-    const normalized = message.trim().toLowerCase();
-    const followUpTriggers = ['još', 'nastavi', 'dalje', 'daj još', 'nastavi dalje'];
-    const isFollowUp = followUpTriggers.includes(normalized);
+    // Smarter follow-up detection (removes diacritics and uses pattern matching)
+    const normalize = (text: string) => text
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, '')
+      .replace(/[^a-z\s]/gi, '')
+      .trim();
+
+    const normalized = normalize(message);
+    const followUpTriggers = ['jos', 'nastavi', 'dalje', 'daj jos', 'nastavi dalje'];
+    const isFollowUp = followUpTriggers.some(trigger => normalized.includes(trigger));
 
     if (!knowledgeBase.trim() && !isFollowUp) {
       return "I don't have any documents in my knowledge base yet. Please ask an admin to upload some documents so I can help answer your questions based on that content.";
