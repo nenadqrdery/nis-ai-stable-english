@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Slider } from '@/components/ui/slider';
 import { Bot, Mail, Lock, User as UserIcon } from 'lucide-react';
 import { User, SignUpData } from '../types/auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,7 +15,7 @@ interface LoginPageProps {
 }
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [signUpData, setSignUpData] = useState<SignUpData>({
     firstName: '',
@@ -28,10 +27,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     email: '',
     password: ''
   });
-
-  const handleToggle = () => {
-    setIsSignUp(!isSignUp);
-  };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,189 +124,160 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             </CardDescription>
           </div>
         </CardHeader>
-        
         <CardContent className="space-y-6">
-          {/* Toggle Slider */}
-          <div className="relative">
-            <div className="flex items-center justify-between bg-gray-100 rounded-full p-1 relative">
-              {/* Sliding background */}
-              <div 
-                className={`absolute top-1 h-8 w-1/2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full transition-transform duration-300 ease-in-out ${
-                  isSignUp ? 'translate-x-full' : 'translate-x-0'
-                }`}
-              />
-              
-              {/* Toggle buttons */}
-              <button
-                type="button"
-                onClick={() => setIsSignUp(false)}
-                className={`relative z-10 flex-1 py-2 px-4 text-sm font-medium rounded-full transition-colors duration-300 ${
-                  !isSignUp ? 'text-white' : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Prijavljivanje
-              </button>
-              
-              <button
-                type="button"
-                onClick={() => setIsSignUp(true)}
-                className={`relative z-10 flex-1 py-2 px-4 text-sm font-medium rounded-full transition-colors duration-300 ${
-                  isSignUp ? 'text-white' : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Registracija
-              </button>
-            </div>
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+              {isSignUp ? 'Registracija' : 'Prijavljivanje'}
+            </h2>
+            <p className="text-gray-600 text-sm">
+              {isSignUp 
+                ? 'Kreirajte novi nalog da pristupite chatbotu'
+                : 'Unesite podatke da pristupite chatbotu'
+              }
+            </p>
           </div>
-
-          {/* Form Content */}
-          <div className="min-h-[400px]">
-            {isSignUp ? (
-              <div>
-                <div className="text-center mb-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-2">Registracija</h2>
-                  <p className="text-gray-600 text-sm">
-                    Kreirajte novi nalog da pristupite chatbotu
-                  </p>
+          
+          {isSignUp ? (
+            <form onSubmit={handleSignUp} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName" className="text-gray-700 font-medium">Ime</Label>
+                  <div className="relative">
+                    <UserIcon className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="firstName"
+                      type="text"
+                      placeholder="Vaše ime"
+                      value={signUpData.firstName}
+                      onChange={(e) => setSignUpData({ ...signUpData, firstName: e.target.value })}
+                      className="pl-10 h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500"
+                      required
+                    />
+                  </div>
                 </div>
                 
-                <form onSubmit={handleSignUp} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="firstName" className="text-gray-700 font-medium">Ime</Label>
-                      <div className="relative">
-                        <UserIcon className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input
-                          id="firstName"
-                          type="text"
-                          placeholder="Vaše ime"
-                          value={signUpData.firstName}
-                          onChange={(e) => setSignUpData({ ...signUpData, firstName: e.target.value })}
-                          className="pl-10 h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500"
-                          required
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName" className="text-gray-700 font-medium">Prezime</Label>
-                      <div className="relative">
-                        <UserIcon className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input
-                          id="lastName"
-                          type="text"
-                          placeholder="Vaše prezime"
-                          value={signUpData.lastName}
-                          onChange={(e) => setSignUpData({ ...signUpData, lastName: e.target.value })}
-                          className="pl-10 h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500"
-                          required
-                        />
-                      </div>
-                    </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName" className="text-gray-700 font-medium">Prezime</Label>
+                  <div className="relative">
+                    <UserIcon className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="lastName"
+                      type="text"
+                      placeholder="Vaše prezime"
+                      value={signUpData.lastName}
+                      onChange={(e) => setSignUpData({ ...signUpData, lastName: e.target.value })}
+                      className="pl-10 h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500"
+                      required
+                    />
                   </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="signupEmail" className="text-gray-700 font-medium">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="signupEmail"
-                        type="email"
-                        placeholder="Unesite email"
-                        value={signUpData.email}
-                        onChange={(e) => setSignUpData({ ...signUpData, email: e.target.value })}
-                        className="pl-10 h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500"
-                        required
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="signupPassword" className="text-gray-700 font-medium">Lozinka</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="signupPassword"
-                        type="password"
-                        placeholder="Unesite lozinku"
-                        value={signUpData.password}
-                        onChange={(e) => setSignUpData({ ...signUpData, password: e.target.value })}
-                        className="pl-10 h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500"
-                        required
-                      />
-                    </div>
-                  </div>
-                  
-                  <Button 
-                    type="submit" 
-                    className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-200 transform hover:scale-[1.02]"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? 'Registruje se...' : 'Registruj se'}
-                  </Button>
-                </form>
-              </div>
-            ) : (
-              <div>
-                <div className="text-center mb-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-2">Prijavljivanje</h2>
-                  <p className="text-gray-600 text-sm">
-                    Unesite podatke da pristupite chatbotu
-                  </p>
                 </div>
-                
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="loginEmail" className="text-gray-700 font-medium">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="loginEmail"
-                        type="email"
-                        placeholder="Unesite email"
-                        value={loginData.email}
-                        onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                        className="pl-10 h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500"
-                        required
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="loginPassword" className="text-gray-700 font-medium">Lozinka</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="loginPassword"
-                        type="password"
-                        placeholder="Unesite lozinku"
-                        value={loginData.password}
-                        onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                        className="pl-10 h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500"
-                        required
-                      />
-                    </div>
-                  </div>
-                  
-                  <Button 
-                    type="submit" 
-                    className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-200 transform hover:scale-[1.02]"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? 'Prijavljivanje...' : 'Prijavite se'}
-                  </Button>
-                  
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="w-full text-sm text-purple-600 hover:text-purple-700"
-                    onClick={handleForgotPassword}
-                  >
-                    Zaboravili ste lozinku?
-                  </Button>
-                </form>
               </div>
-            )}
+              
+              <div className="space-y-2">
+                <Label htmlFor="signupEmail" className="text-gray-700 font-medium">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="signupEmail"
+                    type="email"
+                    placeholder="Unesite email"
+                    value={signUpData.email}
+                    onChange={(e) => setSignUpData({ ...signUpData, email: e.target.value })}
+                    className="pl-10 h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="signupPassword" className="text-gray-700 font-medium">Lozinka</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="signupPassword"
+                    type="password"
+                    placeholder="Unesite lozinku"
+                    value={signUpData.password}
+                    onChange={(e) => setSignUpData({ ...signUpData, password: e.target.value })}
+                    className="pl-10 h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <Button 
+                type="submit" 
+                className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-200 transform hover:scale-[1.02]"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Registruje se...' : 'Registruj se'}
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="loginEmail" className="text-gray-700 font-medium">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="loginEmail"
+                    type="email"
+                    placeholder="Unesite email"
+                    value={loginData.email}
+                    onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                    className="pl-10 h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="loginPassword" className="text-gray-700 font-medium">Lozinka</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="loginPassword"
+                    type="password"
+                    placeholder="Unesite lozinku"
+                    value={loginData.password}
+                    onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                    className="pl-10 h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <Button 
+                type="submit" 
+                className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-200 transform hover:scale-[1.02]"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Prijavljivanje...' : 'Prijavite se'}
+              </Button>
+              
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full text-sm text-purple-600 hover:text-purple-700"
+                onClick={handleForgotPassword}
+              >
+                Zaboravili ste lozinku?
+              </Button>
+            </form>
+          )}
+          
+          <div className="text-center">
+            <Button
+              type="button"
+              variant="ghost"
+              className="text-sm text-gray-600 hover:text-gray-900"
+              onClick={() => setIsSignUp(!isSignUp)}
+            >
+              {isSignUp 
+                ? 'Već imate nalog? Prijavite se'
+                : 'Nemate nalog? Registrujte se'
+              }
+            </Button>
           </div>
         </CardContent>
       </Card>
