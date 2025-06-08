@@ -19,12 +19,34 @@ export const generateResponse = async (message: string, user: any): Promise<stri
     const documents = await supabaseService.getDocuments();
     let knowledgeBase = '';
 
+    // Translate query to English for better matching with English docs
+    const translatedQuery = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content: "Translate this to English, preserving only the core question meaning:"
+          },
+          {
+            role: "user",
+            content: message
+          }
+        ],
+        temperature: 0.2
+      })
+    }).then(res => res.json()).then(json => json.choices[0].message.content.trim());
+
     if (documents.length > 0) {
-      const relevantChunks = findRelevantContent(message, documents);
+      const relevantChunks = findRelevantContent(translatedQuery, documents);
       knowledgeBase = relevantChunks.join('\n\n');
     }
 
-    // Smarter follow-up detection (removes diacritics and uses pattern matching)
     const normalize = (text: string) => text
       .toLowerCase()
       .normalize("NFD")
@@ -37,7 +59,7 @@ export const generateResponse = async (message: string, user: any): Promise<stri
     const isFollowUp = followUpTriggers.some(trigger => normalized.includes(trigger));
 
     if (!knowledgeBase.trim() && !isFollowUp) {
-      return "I don't have any documents in my knowledge base yet. Please ask an admin to upload some documents so I can help answer your questions based on that content.";
+      return "Još uvek nemam nijedan dokument u svojoj bazi znanja. Zamolite administratora da doda dokumente kako bih mogao da pomažem korisnicima na osnovu njihovog sadržaja.";
     }
 
     const isCyrillic = /[\u0400-\u04FF]/.test(message);
