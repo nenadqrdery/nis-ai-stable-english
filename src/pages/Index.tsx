@@ -13,13 +13,26 @@ const Index = () => {
   useEffect(() => {
     let mounted = true;
 
-    // Initialize auth state
+    // Initialize auth state with timeout fallback
     const initializeAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        console.log('Starting auth initialization...');
+        const { data: { session }, error } = await supabase.auth.getSession();
         
-        if (mounted) {
-          if (session?.user) {
+        if (error) {
+          console.error('Error getting session:', error);
+          if (mounted) {
+            setUser(null);
+            setIsLoading(false);
+          }
+          return;
+        }
+        
+        if (!mounted) return;
+        
+        if (session?.user) {
+          console.log('Found existing session for user:', session.user.email);
+          try {
             const profile = await supabaseService.getUserProfile(session.user.id);
             
             setUser({
@@ -29,14 +42,28 @@ const Index = () => {
               firstName: profile?.first_name,
               lastName: profile?.last_name
             });
-          } else {
-            setUser(null);
+          } catch (profileError) {
+            console.error('Error fetching user profile:', profileError);
+            // Still set user even if profile fetch fails
+            setUser({
+              email: session.user.email || '',
+              role: session.user.email === 'pixunit.nenad@gmail.com' ? 'admin' : 'user',
+              name: session.user.email || '',
+              firstName: undefined,
+              lastName: undefined
+            });
           }
-          setIsLoading(false);
+        } else {
+          console.log('No existing session found');
+          setUser(null);
         }
+        
+        setIsLoading(false);
+        console.log('Auth initialization completed');
       } catch (error) {
-        console.error('Error initializing auth:', error);
+        console.error('Error during auth initialization:', error);
         if (mounted) {
+          setUser(null);
           setIsLoading(false);
         }
       }
@@ -73,15 +100,27 @@ const Index = () => {
         } else {
           setUser(null);
         }
+        
+        // Ensure loading is false after auth state change
+        setIsLoading(false);
       }
     );
 
     // Initialize auth
     initializeAuth();
 
+    // Fallback timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (mounted && isLoading) {
+        console.warn('Auth initialization timeout - forcing loading to false');
+        setIsLoading(false);
+      }
+    }, 5000); // 5 second timeout
+
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      clearTimeout(timeoutId);
     };
   }, []);
 
@@ -92,11 +131,14 @@ const Index = () => {
   const handleLogout = async () => {
     try {
       console.log('Logging out user...');
+      setIsLoading(true);
       await supabase.auth.signOut();
       setUser(null);
+      setIsLoading(false);
       console.log('User logged out successfully');
     } catch (error) {
       console.error('Error during logout:', error);
+      setIsLoading(false);
     }
   };
 
