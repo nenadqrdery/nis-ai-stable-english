@@ -1,4 +1,3 @@
-
 import { supabaseService } from './supabaseService';
 
 export const generateChatTitle = (firstMessage: string): string => {
@@ -24,20 +23,22 @@ export const generateResponse = async (message: string, user: any): Promise<stri
     let knowledgeBase = '';
 
     if (documents.length > 0) {
-      // Improved similarity search
       const relevantChunks = findRelevantContent(message, documents);
       knowledgeBase = relevantChunks.join('\n\n');
     }
 
-    if (!knowledgeBase.trim()) {
+    // Detect vague follow-up requests
+    const normalized = message.trim().toLowerCase();
+    const followUpTriggers = ['još', 'nastavi', 'dalje', 'daj još', 'nastavi dalje'];
+    const isFollowUp = followUpTriggers.includes(normalized);
+
+    if (!knowledgeBase.trim() && !isFollowUp) {
       return "I don't have any documents in my knowledge base yet. Please ask an admin to upload some documents so I can help answer your questions based on that content.";
     }
 
-    // Detect the script of the user's message (Cyrillic or Latin)
     const isCyrillic = /[\u0400-\u04FF]/.test(message);
     const script = isCyrillic ? 'Cyrillic' : 'Latin';
 
-    // Serbian-only system prompt with script matching
     const systemPrompt = `
 Ti si koristan i pouzdan AI asistent za zaposlene na NIS benzinskim stanicama u Srbiji.
 
@@ -50,11 +51,10 @@ Uputstva:
 - Budi profesionalan, jasan i kolegijalan u tonu.
 
 Baza znanja:
-${knowledgeBase}
+${knowledgeBase || '[Kontekst je nastavak prethodnog razgovora.]'}
 
 Zapamti: Odgovaraj isključivo na srpskom jeziku, koristeći ${script} pismo.`;
 
-    // Call OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -96,7 +96,6 @@ Zapamti: Odgovaraj isključivo na srpskom jeziku, koristeći ${script} pismo.`;
 };
 
 const findRelevantContent = (query: string, documents: any[]): string[] => {
-  // Enhanced keyword-based search with better scoring
   const queryWords = query.toLowerCase()
     .replace(/[^\w\s]/g, ' ')
     .split(' ')
@@ -111,11 +110,9 @@ const findRelevantContent = (query: string, documents: any[]): string[] => {
       let score = 0;
 
       queryWords.forEach(word => {
-        // Exact word matches
         const exactMatches = (chunkLower.match(new RegExp(`\\b${word}\\b`, 'g')) || []).length;
         score += exactMatches * 3;
 
-        // Partial matches
         const partialMatches = (chunkLower.match(new RegExp(word, 'g')) || []).length - exactMatches;
         score += partialMatches;
       });
@@ -130,9 +127,8 @@ const findRelevantContent = (query: string, documents: any[]): string[] => {
     });
   });
 
-  // Sort by relevance and return top chunks
   return scoredChunks
     .sort((a, b) => b.score - a.score)
-    .slice(0, 8) // Increased from 5 to 8 for better context
+    .slice(0, 8)
     .map(item => item.chunk);
 };
