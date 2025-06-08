@@ -1,4 +1,4 @@
-import { supabaseService } from '@/services/supabaseService';
+import { supabaseService } from './supabaseService';
 
 export const generateChatTitle = (firstMessage: string): string => {
   const words = firstMessage.split(' ').slice(0, 5);
@@ -17,8 +17,9 @@ export const generateResponse = async (message: string, user: any): Promise<stri
     }
 
     const documents = await supabaseService.getDocuments();
+    let knowledgeBase = '';
 
-    // Translate Serbian query to English for better matching
+    // Translate query to English for better matching with English docs
     const translatedQuery = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -41,17 +42,9 @@ export const generateResponse = async (message: string, user: any): Promise<stri
       })
     }).then(res => res.json()).then(json => json.choices[0].message.content.trim());
 
-    let knowledgeBase = '';
-    let sourcesUsed: string[] = [];
-
     if (documents.length > 0) {
-      const result = findRelevantContent(translatedQuery, documents);
-      knowledgeBase = result.chunks.join('\n\n');
-      sourcesUsed = result.sources;
-
-      if (sourcesUsed.length > 0) {
-        knowledgeBase += `\n\n[Ovaj odgovor je baziran na: ${sourcesUsed.join(', ')}]`;
-      }
+      const relevantChunks = findRelevantContent(translatedQuery, documents);
+      knowledgeBase = relevantChunks.join('\n\n');
     }
 
     const normalize = (text: string) => text
@@ -128,7 +121,7 @@ Zapamti: Odgovaraj isključivo na srpskom jeziku, koristeći ${script} pismo.`;
   }
 };
 
-const findRelevantContent = (query: string, documents: any[]): { chunks: string[], sources: string[] } => {
+const findRelevantContent = (query: string, documents: any[]): string[] => {
   const queryWords = query.toLowerCase()
     .replace(/[^\w\s]/g, ' ')
     .split(' ')
@@ -138,14 +131,8 @@ const findRelevantContent = (query: string, documents: any[]): { chunks: string[
   const scoredChunks: { chunk: string; score: number; source: string }[] = [];
 
   documents.forEach(doc => {
-    const seen = new Set<string>();
-
     doc.chunks.forEach((chunk: string) => {
-      const cleanChunk = chunk.trim();
-      if (!cleanChunk || seen.has(cleanChunk)) return;
-      seen.add(cleanChunk);
-
-      const chunkLower = cleanChunk.toLowerCase();
+      const chunkLower = chunk.toLowerCase();
       let score = 0;
 
       queryWords.forEach(word => {
@@ -157,22 +144,17 @@ const findRelevantContent = (query: string, documents: any[]): { chunks: string[
       });
 
       if (score > 0) {
-        scoredChunks.push({
-          chunk: cleanChunk,
+        scoredChunks.push({ 
+          chunk: `[From ${doc.name}]: ${chunk}`, 
           score,
-          source: doc.name
+          source: doc.name 
         });
       }
     });
   });
 
-  const topChunks = scoredChunks
+  return scoredChunks
     .sort((a, b) => b.score - a.score)
-    .slice(0, 10);
-
-  const sourcesUsed = Array.from(new Set(topChunks.map(c => c.source)));
-
-  const finalChunks = topChunks.map(c => `[Iz dokumenta: ${c.source}]\n${c.chunk}`);
-
-  return { chunks: finalChunks, sources: sourcesUsed };
+    .slice(0, 8)
+    .map(item => item.chunk);
 };
