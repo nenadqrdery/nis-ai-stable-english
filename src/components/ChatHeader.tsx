@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Bot, LogOut, MessageSquare, Upload, History, Plus } from 'lucide-react';
 import { User } from '../types/auth';
+import MobileNav from './MobileNav';
 
 interface ChatHeaderProps {
   user: User;
@@ -20,7 +21,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
   onShowUpload
 }) => {
   return (
-    <header className="bg-white/95 backdrop-blur-sm border-b border-white/20 shadow-lg">
+    <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
       <div className="px-4 py-3 flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
@@ -34,7 +35,8 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center space-x-2">
+        {/* Desktop Navigation */}
+        <div className="hidden md:flex items-center space-x-2">
           <Button
             variant="ghost"
             size="sm"
@@ -42,7 +44,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
             className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
           >
             <Plus className="w-4 h-4 mr-1" />
-            <span className="hidden sm:inline">New Chat</span>
+            New Chat
           </Button>
           
           <Button
@@ -52,7 +54,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
             className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
           >
             <History className="w-4 h-4 mr-1" />
-            <span className="hidden sm:inline">History</span>
+            History
           </Button>
 
           {user.role === 'admin' && (
@@ -63,7 +65,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
               className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
             >
               <Upload className="w-4 h-4 mr-1" />
-              <span className="hidden sm:inline">Upload</span>
+              Upload
             </Button>
           )}
 
@@ -74,9 +76,18 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
             className="text-gray-600 hover:text-red-600 hover:bg-red-50"
           >
             <LogOut className="w-4 h-4 mr-1" />
-            <span className="hidden sm:inline">Logout</span>
+            Logout
           </Button>
         </div>
+
+        {/* Mobile Navigation */}
+        <MobileNav
+          user={user}
+          onLogout={onLogout}
+          onNewChat={onNewChat}
+          onShowHistory={onShowHistory}
+          onShowUpload={onShowUpload}
+        />
       </div>
     </header>
   );

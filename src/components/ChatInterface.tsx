@@ -8,6 +8,7 @@ import ChatInput from './ChatInput';
 import DocumentUpload from './DocumentUpload';
 import ChatHistory from './ChatHistory';
 import { generateChatTitle, generateResponse } from '../services/chatService';
+import { supabaseService } from '../services/supabaseService';
 import { toast } from 'sonner';
 
 interface ChatInterfaceProps {
@@ -24,43 +25,51 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ user, onLogout }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Load chats from localStorage
-    const savedChats = localStorage.getItem(`chats-${user.email}`);
-    if (savedChats) {
-      try {
-        const parsedChats = JSON.parse(savedChats).map((chat: any) => ({
-          ...chat,
-          createdAt: new Date(chat.createdAt),
-          updatedAt: new Date(chat.updatedAt),
-          messages: chat.messages.map((msg: any) => ({
-            ...msg,
-            timestamp: new Date(msg.timestamp)
-          }))
-        }));
-        setChats(parsedChats);
-      } catch (error) {
-        console.error('Error loading chats:', error);
-      }
-    }
-    
-    // Create initial chat if none exists
-    if (!savedChats || JSON.parse(savedChats).length === 0) {
-      startNewChat();
-    }
+    loadChats();
   }, [user.email]);
-
-  useEffect(() => {
-    // Save chats to localStorage whenever chats change
-    if (chats.length > 0) {
-      localStorage.setItem(`chats-${user.email}`, JSON.stringify(chats));
-    }
-  }, [chats, user.email]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [currentChat?.messages]);
 
-  const startNewChat = () => {
+  const loadChats = async () => {
+    try {
+      const chatsData = await supabaseService.getChats(user.email);
+      const chatsWithMessages = await Promise.all(
+        chatsData.map(async (chat) => {
+          const messagesData = await supabaseService.getChatMessages(chat.id);
+          const messages: Message[] = messagesData.map(msg => ({
+            id: msg.id,
+            content: msg.content,
+            role: msg.role,
+            timestamp: new Date(msg.timestamp),
+            chatId: msg.chat_id
+          }));
+          
+          return {
+            id: chat.id,
+            title: chat.title,
+            messages,
+            createdAt: new Date(chat.created_at),
+            updatedAt: new Date(chat.updated_at)
+          };
+        })
+      );
+      
+      setChats(chatsWithMessages);
+      
+      if (chatsWithMessages.length === 0) {
+        startNewChat();
+      } else {
+        setCurrentChat(chatsWithMessages[0]);
+      }
+    } catch (error) {
+      console.error('Error loading chats:', error);
+      startNewChat();
+    }
+  };
+
+  const startNewChat = async () => {
     const newChat: Chat = {
       id: `chat-${Date.now()}`,
       title: 'New Chat',
@@ -69,9 +78,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ user, onLogout }) => {
       updatedAt: new Date()
     };
     
-    setCurrentChat(newChat);
-    setChats(prev => [newChat, ...prev]);
-    setShowHistory(false);
+    try {
+      await supabaseService.saveChat({
+        id: newChat.id,
+        title: newChat.title,
+        user_email: user.email
+      });
+      
+      setCurrentChat(newChat);
+      setChats(prev => [newChat, ...prev]);
+      setShowHistory(false);
+    } catch (error) {
+      console.error('Error creating new chat:', error);
+      toast.error('Failed to create new chat');
+    }
   };
 
   const selectChat = (chat: Chat) => {
@@ -107,6 +127,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ user, onLogout }) => {
     setIsLoading(true);
 
     try {
+      // Save user message to database
+      await supabaseService.saveMessage({
+        chat_id: currentChat.id,
+        content: userMessage.content,
+        role: userMessage.role
+      });
+
+      // Update chat title if it's the first message
+      if (currentChat.messages.length === 0) {
+        await supabaseService.updateChat(currentChat.id, { title: updatedChat.title });
+      }
+
       const response = await generateResponse(content, user);
       
       const assistantMessage: Message = {
@@ -125,6 +157,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ user, onLogout }) => {
 
       setCurrentChat(finalChat);
       setChats(prev => prev.map(c => c.id === currentChat.id ? finalChat : c));
+
+      // Save assistant message to database
+      await supabaseService.saveMessage({
+        chat_id: currentChat.id,
+        content: assistantMessage.content,
+        role: assistantMessage.role
+      });
+
     } catch (error) {
       console.error('Error generating response:', error);
       toast.error('Failed to generate response. Please try again.');
@@ -134,7 +174,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ user, onLogout }) => {
   };
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
+    <div className="h-screen flex flex-col overflow-hidden bg-white">
       <ChatHeader
         user={user}
         onLogout={onLogout}

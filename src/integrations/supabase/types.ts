@@ -9,7 +9,108 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      admin_settings: {
+        Row: {
+          created_at: string
+          id: string
+          setting_key: string
+          setting_value: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          setting_key: string
+          setting_value?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          setting_key?: string
+          setting_value?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          chat_id: string
+          content: string
+          id: string
+          role: string
+          timestamp: string
+        }
+        Insert: {
+          chat_id: string
+          content: string
+          id?: string
+          role: string
+          timestamp?: string
+        }
+        Update: {
+          chat_id?: string
+          content?: string
+          id?: string
+          role?: string
+          timestamp?: string
+        }
+        Relationships: []
+      }
+      chats: {
+        Row: {
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+          user_email: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          title: string
+          updated_at?: string
+          user_email: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_email?: string
+        }
+        Relationships: []
+      }
+      documents: {
+        Row: {
+          chunks: string[] | null
+          content: string
+          file_size: number | null
+          id: string
+          name: string
+          type: string
+          uploaded_at: string
+        }
+        Insert: {
+          chunks?: string[] | null
+          content: string
+          file_size?: number | null
+          id?: string
+          name: string
+          type: string
+          uploaded_at?: string
+        }
+        Update: {
+          chunks?: string[] | null
+          content?: string
+          file_size?: number | null
+          id?: string
+          name?: string
+          type?: string
+          uploaded_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

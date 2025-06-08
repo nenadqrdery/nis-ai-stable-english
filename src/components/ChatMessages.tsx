@@ -12,13 +12,13 @@ interface ChatMessagesProps {
 const ChatMessages: React.FC<ChatMessagesProps> = ({ messages, isLoading }) => {
   if (messages.length === 0 && !isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center p-8">
+      <div className="flex-1 flex items-center justify-center p-8 bg-white">
         <div className="text-center space-y-4 max-w-md">
           <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto">
             <Bot className="w-8 h-8 text-white" />
           </div>
-          <h3 className="text-xl font-semibold text-white">Welcome to Knowledge Bot</h3>
-          <p className="text-white/80">
+          <h3 className="text-xl font-semibold text-gray-900">Welcome to Knowledge Bot</h3>
+          <p className="text-gray-600">
             I'm here to help you with questions based on your uploaded documents. 
             Start by asking me anything about your knowledge base!
           </p>
@@ -28,7 +28,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({ messages, isLoading }) => {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
       {messages.map((message) => (
         <div
           key={message.id}
@@ -49,8 +49,8 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({ messages, isLoading }) => {
             
             <Card className={`p-4 ${
               message.role === 'user' 
-                ? 'bg-blue-500 text-white' 
-                : 'bg-white/95 backdrop-blur-sm text-gray-900'
+                ? 'bg-blue-500 text-white border-blue-500' 
+                : 'bg-gray-50 text-gray-900 border-gray-200'
             }`}>
               <p className="text-sm leading-relaxed whitespace-pre-wrap">
                 {message.content}
@@ -71,7 +71,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({ messages, isLoading }) => {
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
               <Bot className="w-4 h-4 text-white" />
             </div>
-            <Card className="p-4 bg-white/95 backdrop-blur-sm">
+            <Card className="p-4 bg-gray-50 border-gray-200">
               <div className="flex space-x-1">
                 <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
                 <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
