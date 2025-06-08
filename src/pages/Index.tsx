@@ -1,3 +1,8 @@
+import React, { useState, useEffect } from 'react';
+import { User } from '../types/auth';
+import LoginPage from '../components/LoginPage';
+import ChatInterface from '../components/ChatInterface';
+import { supabase } from '@/integrations/supabase/client';
 import { supabaseService } from '@/services/supabaseService';
 
 export const generateChatTitle = (firstMessage: string): string => {
@@ -177,9 +182,102 @@ const findRelevantContent = (query: string, documents: any[]): { chunks: string[
   return { chunks: finalChunks, sources: sourcesUsed };
 };
 
-// Add default export as a simple component that redirects to App
-const Index = () => {
-  return null;
+interface IndexProps {
+  user?: User | null;
+}
+
+const Index: React.FC<IndexProps> = ({ user: initialUser }) => {
+  const [user, setUser] = useState<User | null>(initialUser || null);
+  const [isLoading, setIsLoading] = useState(!initialUser);
+
+  useEffect(() => {
+    if (initialUser) {
+      setUser(initialUser);
+      setIsLoading(false);
+      return;
+    }
+
+    // Only set up auth listeners if no initial user provided
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          try {
+            const profile = await supabaseService.getUserProfile(session.user.id);
+            
+            setUser({
+              email: session.user.email || '',
+              role: session.user.email === 'pixunit.nenad@gmail.com' ? 'admin' : 'user',
+              name: profile ? `${profile.first_name} ${profile.last_name}` : session.user.email || '',
+              firstName: profile?.first_name,
+              lastName: profile?.last_name
+            });
+          } catch (error) {
+            console.error('Error fetching user profile:', error);
+            setUser({
+              email: session.user.email || '',
+              role: session.user.email === 'pixunit.nenad@gmail.com' ? 'admin' : 'user',
+              name: session.user.email || '',
+              firstName: undefined,
+              lastName: undefined
+            });
+          }
+        } else {
+          setUser(null);
+        }
+        setIsLoading(false);
+      }
+    );
+
+    // Check for existing session
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Error checking session:', error);
+        setIsLoading(false);
+      }
+    };
+
+    checkSession();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [initialUser]);
+
+  const handleLogin = (userData: User) => {
+    setUser(userData);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-purple-800 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-purple-800">
+      {user ? (
+        <ChatInterface user={user} onLogout={handleLogout} />
+      ) : (
+        <LoginPage onLogin={handleLogin} />
+      )}
+    </div>
+  );
 };
 
 export default Index;
