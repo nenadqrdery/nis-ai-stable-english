@@ -79,9 +79,9 @@ export const supabaseService = {
       .from('documents')
       .select('*')
       .order('uploaded_at', { ascending: false });
-    
+
     if (error) throw error;
-    
+
     return (data || []).map(doc => ({
       ...doc,
       type: doc.type as 'pdf' | 'txt',
