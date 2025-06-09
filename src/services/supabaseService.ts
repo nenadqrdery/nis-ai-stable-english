@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface DocumentData {
@@ -42,7 +43,7 @@ export const supabaseService = {
       .select('setting_value')
       .eq('setting_key', 'openai_api_key')
       .single();
-
+    
     return data?.setting_value || null;
   },
 
@@ -63,12 +64,12 @@ export const supabaseService = {
       .select('*')
       .eq('id', userId)
       .single();
-
+    
     if (error) {
       console.error('Error fetching user profile:', error);
       return null;
     }
-
+    
     return data;
   },
 
@@ -78,9 +79,9 @@ export const supabaseService = {
       .from('documents')
       .select('*')
       .order('uploaded_at', { ascending: false });
-
+    
     if (error) throw error;
-
+    
     return (data || []).map(doc => ({
       ...doc,
       type: doc.type as 'pdf' | 'txt',
@@ -88,30 +89,15 @@ export const supabaseService = {
     }));
   },
 
-  async saveDocument(document: Omit<DocumentData, 'id' | 'uploaded_at'>): Promise<string> {
-    const { data, error } = await supabase
+  async saveDocument(document: Omit<DocumentData, 'id' | 'uploaded_at'>): Promise<void> {
+    const { error } = await supabase
       .from('documents')
       .insert({
         ...document,
         uploaded_at: new Date().toISOString()
-      })
-      .select('id')
-      .single();
-
+      });
+    
     if (error) throw error;
-    return data.id;
-  },
-
-  async insertChunk({ document_id, chunk, embedding }: {
-    document_id: string;
-    chunk: string;
-    embedding: number[];
-  }) {
-    const { error } = await supabase
-      .from('document_chunks')
-      .insert({ document_id, chunk, embedding });
-
-    return { error };
   },
 
   // Chats
@@ -121,7 +107,7 @@ export const supabaseService = {
       .select('*')
       .eq('user_email', userEmail)
       .order('updated_at', { ascending: false });
-
+    
     if (error) throw error;
     return data || [];
   },
@@ -135,7 +121,7 @@ export const supabaseService = {
         created_at: now,
         updated_at: now
       });
-
+    
     if (error) throw error;
   },
 
@@ -147,7 +133,7 @@ export const supabaseService = {
         updated_at: new Date().toISOString()
       })
       .eq('id', chatId);
-
+    
     if (error) throw error;
   },
 
@@ -158,9 +144,9 @@ export const supabaseService = {
       .select('*')
       .eq('chat_id', chatId)
       .order('timestamp', { ascending: true });
-
+    
     if (error) throw error;
-
+    
     return (data || []).map(msg => ({
       ...msg,
       role: msg.role as 'user' | 'assistant'
@@ -174,7 +160,7 @@ export const supabaseService = {
         ...message,
         timestamp: new Date().toISOString()
       });
-
+    
     if (error) throw error;
   }
 };

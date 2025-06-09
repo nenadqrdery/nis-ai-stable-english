@@ -9,44 +9,6 @@ import { X, Upload, File, AlertCircle, Check, Eye, EyeOff, Edit } from 'lucide-r
 import { toast } from 'sonner';
 import { supabaseService } from '../services/supabaseService';
 
-const embedAndStoreChunks = async (documentId: string, chunks: string[]) => {
-  const apiKey = await supabaseService.getApiKey();
-
-  for (const chunk of chunks) {
-    try {
-      const embeddingRes = await fetch("https://api.openai.com/v1/embeddings", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: "text-embedding-ada-002",
-          input: chunk,
-        }),
-      });
-
-      const data = await embeddingRes.json();
-      const embedding = data?.data?.[0]?.embedding;
-
-      if (!embedding) throw new Error("Failed to generate embedding");
-
-      const { error } = await supabaseService.insertChunk({
-        document_id: documentId,
-        chunk,
-        embedding,
-      });
-
-      if (error) {
-        console.error("Error inserting chunk:", error);
-      }
-    } catch (err) {
-      console.error("Embedding error:", err);
-    }
-  }
-};
-
-
 interface DocumentUploadProps {
   onClose: () => void;
 }
@@ -168,8 +130,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ onClose }) => {
           chunks: chunks
         };
 
-        const documentId = await supabaseService.saveDocument(document);
-        await embedAndStoreChunks(documentId, chunks);
+        await supabaseService.saveDocument(document);
         
         // Update progress: Complete
         progress[i] = { ...progress[i], status: 'complete', progress: 100 };
