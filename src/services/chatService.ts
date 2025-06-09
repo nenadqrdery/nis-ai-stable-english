@@ -51,7 +51,7 @@ export const generateResponse = async (message: string, user: any): Promise<stri
     const queryEmbedding = embeddingData.data[0].embedding;
 
     // Vector search
-const { data: matches, error: matchError } = await supabase.rpc('match_documents', {
+await supabase.rpc('match_documents', {
   query_embedding: queryEmbedding as number[],
   match_threshold: 0.75,
   match_count: 10
@@ -60,10 +60,6 @@ const { data: matches, error: matchError } = await supabase.rpc('match_documents
 if (matchError) {
   console.error("Supabase match_documents error:", matchError);
 }
-
-    if (error) {
-      console.error("Supabase match_documents error:", error);
-    }
 
     let knowledgeBase = (matches || []).map(m => m.content).join('\n\n');
 
