@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,12 +39,14 @@ const embedAndStoreChunks = async (documentId: string, chunks: string[]) => {
     const embeddingData = await embeddingResponse.json();
     const embedding = embeddingData.data[0].embedding;
 
-    // @ts-expect-error - document_chunks is not typed in generated Supabase schema
-    const { error } = await supabase.from("document_chunks").insert({
-      document_id: documentId,
-      chunk: chunk,
-      embedding: embedding
-    });
+    // Use proper table reference for document_chunks
+    const { error } = await supabase
+      .from("document_chunks")
+      .insert({
+        document_id: documentId,
+        chunk: chunk,
+        embedding: embedding
+      });
 
     if (error) {
       console.error("Error inserting chunk:", error);

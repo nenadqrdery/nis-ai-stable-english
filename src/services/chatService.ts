@@ -50,9 +50,9 @@ export const generateResponse = async (message: string, user: any): Promise<stri
     const embeddingData = await embeddingRes.json();
     const queryEmbedding = embeddingData.data[0].embedding;
 
-    // Vector search
-    const { data: matches, error: matchError } = await supabase.rpc('match_documents' as any, {
-      query_embedding: queryEmbedding as number[],
+    // Vector search with proper typing
+    const { data: matches, error: matchError } = await supabase.rpc('match_documents', {
+      query_embedding: queryEmbedding,
       match_threshold: 0.75,
       match_count: 10
     });
@@ -62,7 +62,7 @@ export const generateResponse = async (message: string, user: any): Promise<stri
       return "Došlo je do greške u pretrazi dokumenata.";
     }
 
-    let knowledgeBase = (matches || []).map(m => m.content).join('\n\n');
+    let knowledgeBase = (matches || []).map((m: any) => m.content).join('\n\n');
 
     // Fallback
     const normalize = (text: string) => text
