@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+const insertChunk = (data: any) => supabase.from('document_chunks').insert(data);
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,11 +37,11 @@ const embedAndStoreChunks = async (documentId: string, chunks: string[]) => {
     const embeddingData = await embeddingResponse.json();
     const embedding = embeddingData.data[0].embedding;
 
-    const { error } = await supabase.from("document_chunks").insert({
-      document_id: documentId,
-      chunk: chunk,
-      embedding: embedding,
-    });
+const { error } = await insertChunk({
+  document_id: documentId,
+  chunk: chunk,
+  embedding: embedding,
+});
 
     if (error) {
       console.error("Error inserting chunk:", error);
