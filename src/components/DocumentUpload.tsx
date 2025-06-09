@@ -161,7 +161,8 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ onClose }) => {
           chunks: chunks
         };
 
-        await supabaseService.saveDocument(document);
+        const documentId = await supabaseService.saveDocument(document);
+await embedAndStoreChunks(documentId, chunks);
         
         // Update progress: Complete
         progress[i] = { ...progress[i], status: 'complete', progress: 100 };
