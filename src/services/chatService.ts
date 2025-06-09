@@ -51,11 +51,11 @@ export const generateResponse = async (message: string, user: any): Promise<stri
     const queryEmbedding = embeddingData.data[0].embedding;
 
     // Vector search
-    const { data: matches, error } = await supabase.rpc("match_documents", {
-      query_embedding: queryEmbedding,
-      match_threshold: 0.75,
-      match_count: 10
-    });
+await supabase.rpc('match_documents', {
+  query_embedding: queryEmbedding as number[],
+  match_threshold: 0.75,
+  match_count: 10
+});
 
     if (error) {
       console.error("Supabase match_documents error:", error);
