@@ -232,9 +232,30 @@ const Index: React.FC<IndexProps> = ({ user: initialUser }) => {
     const checkSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          setIsLoading(false);
-        }
+if (session?.user) {
+  try {
+    const profile = await supabaseService.getUserProfile(session.user.id);
+    setUser({
+      email: session.user.email || '',
+      role: session.user.email === 'pixunit.nenad@gmail.com' ? 'admin' : 'user',
+      name: profile ? `${profile.first_name} ${profile.last_name}` : session.user.email || '',
+      firstName: profile?.first_name,
+      lastName: profile?.last_name
+    });
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    setUser({
+      email: session.user.email || '',
+      role: session.user.email === 'pixunit.nenad@gmail.com' ? 'admin' : 'user',
+      name: session.user.email || '',
+      firstName: undefined,
+      lastName: undefined
+    });
+  }
+} else {
+  setUser(null);
+}
+setIsLoading(false);
       } catch (error) {
         console.error('Error checking session:', error);
         setIsLoading(false);
