@@ -163,4 +163,16 @@ export const supabaseService = {
     
     if (error) throw error;
   }
+  insertChunk: async ({ document_id, chunk, embedding }: {
+  document_id: string;
+  chunk: string;
+  embedding: number[];
+}) => {
+  const { error } = await supabase
+    .from("document_chunks")
+    .insert({ document_id, chunk, embedding });
+
+  return { error };
+}
+
 };
