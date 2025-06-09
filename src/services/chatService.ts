@@ -1,3 +1,4 @@
+import { supabase } from '@/integrations/supabase/client';
 import { supabaseService } from './supabaseService';
 
 export const generateChatTitle = (firstMessage: string): string => {
