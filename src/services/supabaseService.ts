@@ -79,9 +79,9 @@ export const supabaseService = {
       .from('documents')
       .select('*')
       .order('uploaded_at', { ascending: false });
-
+    
     if (error) throw error;
-
+    
     return (data || []).map(doc => ({
       ...doc,
       type: doc.type as 'pdf' | 'txt',
@@ -89,19 +89,15 @@ export const supabaseService = {
     }));
   },
 
-  async saveDocument(document: Omit<DocumentData, 'id' | 'uploaded_at'>): Promise<string> {
-    const { data, error } = await supabase
+  async saveDocument(document: Omit<DocumentData, 'id' | 'uploaded_at'>): Promise<void> {
+    const { error } = await supabase
       .from('documents')
       .insert({
         ...document,
         uploaded_at: new Date().toISOString()
-      })
-      .select('id')
-      .single();
-
+      });
+    
     if (error) throw error;
-
-    return data.id;
   },
 
   // Chats
