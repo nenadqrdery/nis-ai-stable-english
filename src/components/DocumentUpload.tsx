@@ -18,6 +18,37 @@ interface UploadProgress {
   status: 'reading' | 'processing' | 'saving' | 'complete';
   progress: number;
 }
+const embedAndStoreChunks = async (documentId: string, chunks: string[]) => {
+  const apiKey = await supabaseService.getApiKey();
+
+  for (const chunk of chunks) {
+    const embeddingResponse = await fetch("https://api.openai.com/v1/embeddings", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: "text-embedding-ada-002",
+        input: chunk
+      })
+    });
+
+    const embeddingData = await embeddingResponse.json();
+    const embedding = embeddingData.data[0].embedding;
+
+    const { error } = await supabase.from("document_chunks").insert({
+      document_id: documentId,
+      chunk: chunk,
+      embedding: embedding,
+    });
+
+    if (error) {
+      console.error("Error inserting chunk:", error);
+    }
+  }
+};
+
 
 const DocumentUpload: React.FC<DocumentUploadProps> = ({ onClose }) => {
   const [files, setFiles] = useState<File[]>([]);
