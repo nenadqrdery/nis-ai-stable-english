@@ -1,5 +1,5 @@
-import { supabase } from '@/integrations/supabase/client';
 import { supabaseService } from './supabaseService';
+import { supabase } from '@/integrations/supabase/client';
 
 export const generateChatTitle = (firstMessage: string): string => {
   const words = firstMessage.split(' ').slice(0, 5);
@@ -34,7 +34,7 @@ export const generateResponse = async (message: string, user: any): Promise<stri
       })
     }).then(res => res.json()).then(json => json.choices[0].message.content.trim());
 
-    // Embed query
+    // Create embedding
     const embeddingRes = await fetch("https://api.openai.com/v1/embeddings", {
       method: "POST",
       headers: {
@@ -51,19 +51,20 @@ export const generateResponse = async (message: string, user: any): Promise<stri
     const queryEmbedding = embeddingData.data[0].embedding;
 
     // Vector search
-await supabase.rpc('match_documents', {
-  query_embedding: queryEmbedding as number[],
-  match_threshold: 0.75,
-  match_count: 10
-});
+    const { data: matches, error: matchError } = await supabase.rpc('match_documents' as any, {
+      query_embedding: queryEmbedding as number[],
+      match_threshold: 0.75,
+      match_count: 10
+    });
 
-if (matchError) {
-  console.error("Supabase match_documents error:", matchError);
-}
+    if (matchError) {
+      console.error("Supabase match_documents error:", matchError);
+      return "Došlo je do greške u pretrazi dokumenata.";
+    }
 
     let knowledgeBase = (matches || []).map(m => m.content).join('\n\n');
 
-    // Handle fallback logic
+    // Fallback
     const normalize = (text: string) => text
       .toLowerCase()
       .normalize("NFD")
@@ -76,7 +77,6 @@ if (matchError) {
     const isFollowUp = followUpTriggers.some(trigger => normalized.includes(trigger));
 
     if (!knowledgeBase.trim() && !isFollowUp) {
-      // fallback: keyword matching
       const documents = await supabaseService.getDocuments();
       const fallbackChunks: string[] = [];
 
@@ -89,10 +89,7 @@ if (matchError) {
       documents.forEach(doc => {
         doc.chunks?.forEach((chunk: string) => {
           const lowerChunk = chunk.toLowerCase();
-          const matchScore = queryWords.reduce((acc, word) => {
-            return acc + (lowerChunk.includes(word) ? 1 : 0);
-          }, 0);
-
+          const matchScore = queryWords.reduce((acc, word) => acc + (lowerChunk.includes(word) ? 1 : 0), 0);
           if (matchScore > 1) {
             fallbackChunks.push(`[From ${doc.name}]: ${chunk}`);
           }
@@ -163,50 +160,4 @@ Zapamti: Odgovaraj isključivo na srpskom jeziku, koristeći ${script} pismo.`;
     }
     return "Izvinite, došlo je do neočekivane greške. Pokušajte ponovo kasnije.";
   }
-};
-
-const findRelevantContent = (query: string, documents: any[]): string[] => {
-  const queryWords = query.toLowerCase()
-    .replace(/[^\w\s]/g, ' ')
-    .split(' ')
-    .filter(word => word.length > 2)
-    .filter(word => !['the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by'].includes(word));
-
-  const scoredChunks: { chunk: string; score: number; source: string }[] = [];
-
-  documents.forEach(doc => {
-    const uniqueChunks = new Set<string>();
-
-    doc.chunks.forEach((chunk: string) => {
-      const cleanedChunk = chunk.trim();
-      if (!cleanedChunk || uniqueChunks.has(cleanedChunk)) return;
-
-      uniqueChunks.add(cleanedChunk);
-
-      const chunkLower = cleanedChunk.toLowerCase();
-      let score = 0;
-
-      queryWords.forEach(word => {
-        const exactMatches = (chunkLower.match(new RegExp(`\\b${word}\\b`, 'g')) || []).length;
-        score += exactMatches * 3;
-
-        const partialMatches = (chunkLower.match(new RegExp(word, 'g')) || []).length - exactMatches;
-        score += partialMatches;
-      });
-
-      if (score > 0) {
-        scoredChunks.push({
-          chunk: `[From ${doc.name}]: ${cleanedChunk}`,
-          score,
-          source: doc.name
-        });
-      }
-    });
-  });
-
-  // Sort globally across all documents and return top N chunks (from multiple files)
-  return scoredChunks
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 10)
-    .map(item => item.chunk);
 };

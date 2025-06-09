@@ -1,3 +1,4 @@
+import { supabase } from '@/integrations/supabase/client';
 const insertChunk = (data: any) => supabase.from('document_chunks').insert(data);
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
