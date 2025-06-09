@@ -16,10 +16,7 @@ export const generateResponse = async (message: string, user: any): Promise<stri
       return "I need an OpenAI API key to function. Please ask an admin to configure it in the document upload section.";
     }
 
-    const documents = await supabaseService.getDocuments();
-    let knowledgeBase = '';
-
-    // Translate query to English for better matching with English docs
+    // Translate to English
     const translatedQuery = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -29,24 +26,43 @@ export const generateResponse = async (message: string, user: any): Promise<stri
       body: JSON.stringify({
         model: "gpt-3.5-turbo",
         messages: [
-          {
-            role: "system",
-            content: "Translate this to English, preserving only the core question meaning:"
-          },
-          {
-            role: "user",
-            content: message
-          }
+          { role: "system", content: "Translate this to English, preserving only the core question meaning:" },
+          { role: "user", content: message }
         ],
         temperature: 0.2
       })
     }).then(res => res.json()).then(json => json.choices[0].message.content.trim());
 
-    if (documents.length > 0) {
-      const relevantChunks = findRelevantContent(translatedQuery, documents);
-      knowledgeBase = relevantChunks.join('\n\n');
+    // Embed query
+    const embeddingRes = await fetch("https://api.openai.com/v1/embeddings", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: "text-embedding-ada-002",
+        input: translatedQuery
+      })
+    });
+
+    const embeddingData = await embeddingRes.json();
+    const queryEmbedding = embeddingData.data[0].embedding;
+
+    // Vector search
+    const { data: matches, error } = await supabase.rpc("match_documents", {
+      query_embedding: queryEmbedding,
+      match_threshold: 0.75,
+      match_count: 10
+    });
+
+    if (error) {
+      console.error("Supabase match_documents error:", error);
     }
 
+    let knowledgeBase = (matches || []).map(m => m.content).join('\n\n');
+
+    // Handle fallback logic
     const normalize = (text: string) => text
       .toLowerCase()
       .normalize("NFD")
@@ -59,7 +75,34 @@ export const generateResponse = async (message: string, user: any): Promise<stri
     const isFollowUp = followUpTriggers.some(trigger => normalized.includes(trigger));
 
     if (!knowledgeBase.trim() && !isFollowUp) {
-      return "Još uvek nemam nijedan dokument u svojoj bazi znanja. Zamolite administratora da doda dokumente kako bih mogao da pomažem korisnicima na osnovu njihovog sadržaja.";
+      // fallback: keyword matching
+      const documents = await supabaseService.getDocuments();
+      const fallbackChunks: string[] = [];
+
+      const queryWords = translatedQuery
+        .toLowerCase()
+        .replace(/[^\w\s]/g, ' ')
+        .split(' ')
+        .filter(word => word.length > 2);
+
+      documents.forEach(doc => {
+        doc.chunks?.forEach((chunk: string) => {
+          const lowerChunk = chunk.toLowerCase();
+          const matchScore = queryWords.reduce((acc, word) => {
+            return acc + (lowerChunk.includes(word) ? 1 : 0);
+          }, 0);
+
+          if (matchScore > 1) {
+            fallbackChunks.push(`[From ${doc.name}]: ${chunk}`);
+          }
+        });
+      });
+
+      if (fallbackChunks.length === 0) {
+        return "Nisam pronašao informacije koje odgovaraju vašem pitanju u dostupnim dokumentima.";
+      }
+
+      knowledgeBase = fallbackChunks.slice(0, 8).join('\n\n');
     }
 
     const isCyrillic = /[\u0400-\u04FF]/.test(message);
