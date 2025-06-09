@@ -89,20 +89,20 @@ export const supabaseService = {
     }));
   },
 
-async saveDocument(document: Omit<DocumentData, 'id' | 'uploaded_at'>): Promise<string> {
-  const { data, error } = await supabase
-    .from('documents')
-    .insert({
-      ...document,
-      uploaded_at: new Date().toISOString()
-    })
-    .select('id')
-    .single();
+  async saveDocument(document: Omit<DocumentData, 'id' | 'uploaded_at'>): Promise<string> {
+    const { data, error } = await supabase
+      .from('documents')
+      .insert({
+        ...document,
+        uploaded_at: new Date().toISOString()
+      })
+      .select('id')
+      .single();
 
-  if (error) throw error;
+    if (error) throw error;
 
-  return data.id;
-}
+    return data.id;
+  },
 
   // Chats
   async getChats(userEmail: string): Promise<ChatData[]> {
