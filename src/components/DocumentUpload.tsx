@@ -130,7 +130,16 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ onClose }) => {
           chunks: chunks
         };
 
-        await supabaseService.saveDocument(document);
+await fetch("/functions/v1/embed", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    name: file.name,
+    content: text
+  })
+});
         
         // Update progress: Complete
         progress[i] = { ...progress[i], status: 'complete', progress: 100 };
