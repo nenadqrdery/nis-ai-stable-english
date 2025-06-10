@@ -8,7 +8,6 @@ import { Progress } from '@/components/ui/progress';
 import { X, Upload, File, AlertCircle, Check, Eye, EyeOff, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabaseService } from '../services/supabaseService';
-import { supabase } from '@/integrations/supabase/client';
 
 interface DocumentUploadProps {
   onClose: () => void;
@@ -16,7 +15,7 @@ interface DocumentUploadProps {
 
 interface UploadProgress {
   fileName: string;
-  status: 'reading' | 'processing' | 'uploading' | 'saving' | 'complete';
+  status: 'reading' | 'processing' | 'saving' | 'complete';
   progress: number;
 }
 
@@ -108,41 +107,21 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ onClose }) => {
         const file = files[i];
         
         // Update progress: Reading file
-        progress[i] = { ...progress[i], status: 'reading', progress: 20 };
+        progress[i] = { ...progress[i], status: 'reading', progress: 25 };
         setUploadProgress([...progress]);
         
         const text = await readFileAsText(file);
         
         // Update progress: Processing
-        progress[i] = { ...progress[i], status: 'processing', progress: 40 };
+        progress[i] = { ...progress[i], status: 'processing', progress: 50 };
         setUploadProgress([...progress]);
         
         const chunks = chunkText(text, 1000);
         
-        // Update progress: Uploading to storage
-        progress[i] = { ...progress[i], status: 'uploading', progress: 60 };
+        // Update progress: Saving
+        progress[i] = { ...progress[i], status: 'saving', progress: 75 };
         setUploadProgress([...progress]);
         
-        // Upload file to storage bucket at documents/raw/
-        const filePath = `raw/${file.name}`;
-        const { error: uploadError } = await supabase.storage
-          .from('documents')
-          .upload(filePath, file, {
-            cacheControl: '3600',
-            upsert: true
-          });
-
-        if (uploadError) {
-          console.error('Storage upload error:', uploadError);
-          toast.error(`Failed to upload ${file.name}: ${uploadError.message}`);
-          continue;
-        }
-        
-        // Update progress: Saving metadata
-        progress[i] = { ...progress[i], status: 'saving', progress: 80 };
-        setUploadProgress([...progress]);
-        
-        // Save document metadata to database
         const document = {
           name: file.name,
           content: text,
@@ -151,7 +130,23 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ onClose }) => {
           chunks: chunks
         };
 
-        await supabaseService.saveDocument(document);
+const res = await fetch("/functions/v1/embed", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    name: file.name,
+    content: text
+  })
+});
+
+if (!res.ok) {
+  const errorText = await res.text();
+  console.error("Embed error:", errorText);
+  toast.error(`Upload failed: ${errorText}`);
+  return;
+}
         
         // Update progress: Complete
         progress[i] = { ...progress[i], status: 'complete', progress: 100 };
@@ -192,8 +187,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ onClose }) => {
     switch (status) {
       case 'reading': return 'Reading file...';
       case 'processing': return 'Processing content...';
-      case 'uploading': return 'Uploading to storage...';
-      case 'saving': return 'Saving metadata...';
+      case 'saving': return 'Saving to database...';
       case 'complete': return 'Complete!';
     }
   };
@@ -325,8 +319,8 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ onClose }) => {
             <div className="text-xs text-blue-800">
               <p className="font-medium">About Document Processing:</p>
               <ul className="mt-1 space-y-1 list-disc list-inside">
-                <li>Documents are uploaded to secure storage</li>
-                <li>Content is processed and stored for AI understanding</li>
+                <li>Documents are processed and stored persistently</li>
+                <li>Content is chunked for better AI understanding</li>
                 <li>All users can query the uploaded knowledge base</li>
               </ul>
             </div>
