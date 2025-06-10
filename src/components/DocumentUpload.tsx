@@ -133,7 +133,8 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ onClose }) => {
 const res = await fetch("/functions/v1/embed", {
   method: "POST",
   headers: {
-    "Content-Type": "application/json"
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY}` // or inject from supabaseService
   },
   body: JSON.stringify({
     name: file.name,
