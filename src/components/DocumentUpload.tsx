@@ -1,4 +1,4 @@
-// DocumentUpload.tsx
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -89,6 +89,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ onClose }) => {
       return;
     }
 
+    // Save API key if not already saved
     if (!hasApiKey && apiKey.trim()) {
       await saveApiKey();
     }
@@ -105,40 +106,53 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ onClose }) => {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         
+        // Update progress: Reading file
         progress[i] = { ...progress[i], status: 'reading', progress: 25 };
         setUploadProgress([...progress]);
         
         const text = await readFileAsText(file);
         
+        // Update progress: Processing
         progress[i] = { ...progress[i], status: 'processing', progress: 50 };
         setUploadProgress([...progress]);
-
-        // 🔥 REAL Supabase upload URL
-        const res = await fetch("https://pkqnrxzdgegbhhlcjtj.supabase.co/functions/v1/embed", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            name: file.name,
-            content: text
-          })
-        });
-
-        if (!res.ok) {
-          const errorText = await res.text();
-          console.error("Embed error:", errorText);
-          toast.error(`Upload failed: ${errorText}`);
-          return;
-        }
-
+        
+        const chunks = chunkText(text, 1000);
+        
+        // Update progress: Saving
         progress[i] = { ...progress[i], status: 'saving', progress: 75 };
         setUploadProgress([...progress]);
+        
+        const document = {
+          name: file.name,
+          content: text,
+          type: file.type === 'application/pdf' ? 'pdf' as const : 'txt' as const,
+          file_size: file.size,
+          chunks: chunks
+        };
 
+const res = await fetch("/functions/v1/embed", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    name: file.name,
+    content: text
+  })
+});
+
+if (!res.ok) {
+  const errorText = await res.text();
+  console.error("Embed error:", errorText);
+  toast.error(`Upload failed: ${errorText}`);
+  return;
+}
+        
+        // Update progress: Complete
         progress[i] = { ...progress[i], status: 'complete', progress: 100 };
         setUploadProgress([...progress]);
       }
-
+      
       toast.success(`Successfully uploaded ${files.length} document(s)`);
       setFiles([]);
       setTimeout(() => {
@@ -159,6 +173,14 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ onClose }) => {
       reader.onerror = reject;
       reader.readAsText(file);
     });
+  };
+
+  const chunkText = (text: string, chunkSize: number): string[] => {
+    const chunks = [];
+    for (let i = 0; i < text.length; i += chunkSize) {
+      chunks.push(text.slice(i, i + chunkSize));
+    }
+    return chunks;
   };
 
   const getStatusText = (status: UploadProgress['status']) => {
@@ -184,7 +206,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ onClose }) => {
             <X className="w-4 h-4" />
           </Button>
         </CardHeader>
-
+        
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="apiKey">OpenAI API Key</Label>
@@ -194,7 +216,11 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ onClose }) => {
                   <Check className="w-4 h-4 text-green-600" />
                   <span className="text-sm text-green-700">API key configured</span>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => setEditingApiKey(true)}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setEditingApiKey(true)}
+                >
                   <Edit className="w-4 h-4" />
                 </Button>
               </div>
@@ -210,19 +236,31 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ onClose }) => {
                     className="font-mono text-sm pr-20"
                   />
                   <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex space-x-1">
-                    <Button type="button" variant="ghost" size="sm" onClick={() => setShowApiKey(!showApiKey)}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowApiKey(!showApiKey)}
+                    >
                       {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </Button>
                   </div>
                 </div>
                 {!hasApiKey && (
-                  <Button onClick={saveApiKey} size="sm" disabled={!apiKey.trim()} className="w-full">
+                  <Button
+                    onClick={saveApiKey}
+                    size="sm"
+                    disabled={!apiKey.trim()}
+                    className="w-full"
+                  >
                     Save API Key
                   </Button>
                 )}
               </div>
             )}
-            <p className="text-xs text-gray-500">Required for AI processing. Your key is stored securely.</p>
+            <p className="text-xs text-gray-500">
+              Required for AI processing. Your key is stored securely.
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -249,7 +287,9 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ onClose }) => {
                   <div key={index} className="flex items-center space-x-2 text-sm">
                     <File className="w-4 h-4 text-gray-400" />
                     <span className="truncate">{file.name}</span>
-                    <span className="text-gray-400">({(file.size / 1024).toFixed(1)} KB)</span>
+                    <span className="text-gray-400">
+                      ({(file.size / 1024).toFixed(1)} KB)
+                    </span>
                   </div>
                 ))}
               </div>
@@ -263,7 +303,9 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ onClose }) => {
                 <div key={index} className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="truncate font-medium">{progress.fileName}</span>
-                    {progress.status === 'complete' && <Check className="w-4 h-4 text-green-600" />}
+                    {progress.status === 'complete' && (
+                      <Check className="w-4 h-4 text-green-600" />
+                    )}
                   </div>
                   <Progress value={progress.progress} className="h-2" />
                   <p className="text-xs text-gray-500">{getStatusText(progress.status)}</p>
