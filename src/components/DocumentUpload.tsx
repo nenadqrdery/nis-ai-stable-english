@@ -130,7 +130,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ onClose }) => {
           chunks: chunks
         };
 
-await fetch("https://pkqnrxzdgdegbhhjctjg.supabase.co/functions/v1/embed", {
+await fetch("https://pkqnrxzdgdegbhhlcjtj.supabase.co/functions/v1/embed", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
