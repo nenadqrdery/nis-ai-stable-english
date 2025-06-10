@@ -130,8 +130,23 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ onClose }) => {
           chunks: chunks
         };
 
-        // Save to documents table
-        await supabaseService.saveDocument(document);
+const res = await fetch("https://pkqnrxzdgegbhhlcjtj.supabase.co/functions/v1/embed", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    name: file.name,
+    content: text
+  })
+});
+
+if (!res.ok) {
+  const errorText = await res.text();
+  console.error("Embed error:", errorText);
+  toast.error(`Upload failed: ${errorText}`);
+  return;
+}
         
         // Update progress: Complete
         progress[i] = { ...progress[i], status: 'complete', progress: 100 };
