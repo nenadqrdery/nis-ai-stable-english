@@ -17,7 +17,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({ messages, isLoading }) => {
           <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto">
             <Bot className="w-8 h-8 text-white" />
           </div>
-          <h3 className="text-xl font-semibold text-gray-900">PitajQ</h3>
+          <h3 className="text-xl font-semibold text-gray-900">Pitaj Q</h3>
           <p className="text-gray-600">
             Ja sam tvoj lični pomoćnik za HSE i bezbednost na radu.
 Slobodno postavi bilo koje pitanje u vezi sa pravilima, procedurama ili bezbednosnim situacijama – tu sam da ti pomognem!
