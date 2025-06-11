@@ -49,7 +49,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled }) => {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Ask me anything about your documents..."
+            placeholder="Reci šta te zanima"
             className="min-h-[48px] max-h-[120px] resize-none border-gray-200 focus:border-purple-500 focus:ring-purple-500 rounded-lg"
             disabled={disabled}
           />
