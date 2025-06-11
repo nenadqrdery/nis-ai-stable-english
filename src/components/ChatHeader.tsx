@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { LogOut, Upload, History, Plus } from 'lucide-react';
+import { Bot, LogOut, Upload, History, Plus } from 'lucide-react';
 import { User } from '../types/auth';
 import MobileNav from './MobileNav';
 
@@ -24,12 +24,8 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
     <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm fixed top-0 left-0 right-0 z-50">
       <div className="px-4 py-3 flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center">
-            <img 
-              src="/lovable-uploads/a66ddc38-0656-4ac4-8644-18375ce5a131.png" 
-              alt="Pitaj Q Logo" 
-              className="w-8 h-8 object-contain"
-            />
+          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+            <Bot className="w-5 h-5 text-white" />
           </div>
           <div>
             <h1 className="text-lg font-bold text-gray-900">Pitaj Q</h1>
