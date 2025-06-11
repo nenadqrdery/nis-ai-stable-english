@@ -33,7 +33,7 @@ export const generateResponse = async (message: string, user: any): Promise<stri
     }).then(res => res.json()).then(json => json.choices?.[0]?.message?.content?.trim() || message);
 
     // Step 2: Call match_documents Edge Function
-    const matchRes = await fetch('/functions/v1/match_documents', {
+const matchRes = await fetch('https://pkqnrxzdgdegbhhlcjtj.supabase.co/functions/v1/match_documents', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
