@@ -16,10 +16,14 @@ export const generateResponse = async (message: string, user: any): Promise<stri
       return "I need an OpenAI API key to function. Please ask an admin to configure it in the document upload section.";
     }
 
-    const documents = await supabaseService.getDocuments();
-    let knowledgeBase = '';
+    const session = await supabaseService.getSession();
+    const token = session?.access_token;
 
-    // Translate query to English for better matching with English docs
+    if (!token) {
+      return "Session missing or expired. Please log in again.";
+    }
+
+    // STEP 1 — Translate user query to English for better vector match
     const translatedQuery = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -42,11 +46,26 @@ export const generateResponse = async (message: string, user: any): Promise<stri
       })
     }).then(res => res.json()).then(json => json.choices[0].message.content.trim());
 
-    if (documents.length > 0) {
-      const relevantChunks = findRelevantContent(translatedQuery, documents);
-      knowledgeBase = relevantChunks.join('\n\n');
+    // STEP 2 — Query the Edge Function to retrieve best chunks
+    let knowledgeBase = '';
+
+    const matchRes = await fetch('/functions/v1/match_documents', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ query: translatedQuery })
+    });
+
+    if (matchRes.ok) {
+      const { matches } = await matchRes.json();
+      knowledgeBase = matches.map(m => m.chunk).join('\n\n');
+    } else {
+      console.warn("⚠️ Failed to fetch matched chunks from match_documents.");
     }
 
+    // STEP 3 — Build proper Serbian response logic
     const normalize = (text: string) => text
       .toLowerCase()
       .normalize("NFD")
@@ -81,6 +100,7 @@ ${knowledgeBase || '[Kontekst je nastavak prethodnog razgovora.]'}
 
 Zapamti: Odgovaraj isključivo na srpskom jeziku, koristeći ${script} pismo.`;
 
+    // STEP 4 — Generate final response using OpenAI
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -119,50 +139,4 @@ Zapamti: Odgovaraj isključivo na srpskom jeziku, koristeći ${script} pismo.`;
     }
     return "Izvinite, došlo je do neočekivane greške. Pokušajte ponovo kasnije.";
   }
-};
-
-const findRelevantContent = (query: string, documents: any[]): string[] => {
-  const queryWords = query.toLowerCase()
-    .replace(/[^\w\s]/g, ' ')
-    .split(' ')
-    .filter(word => word.length > 2)
-    .filter(word => !['the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by'].includes(word));
-
-  const scoredChunks: { chunk: string; score: number; source: string }[] = [];
-
-  documents.forEach(doc => {
-    const uniqueChunks = new Set<string>();
-
-    doc.chunks.forEach((chunk: string) => {
-      const cleanedChunk = chunk.trim();
-      if (!cleanedChunk || uniqueChunks.has(cleanedChunk)) return;
-
-      uniqueChunks.add(cleanedChunk);
-
-      const chunkLower = cleanedChunk.toLowerCase();
-      let score = 0;
-
-      queryWords.forEach(word => {
-        const exactMatches = (chunkLower.match(new RegExp(`\\b${word}\\b`, 'g')) || []).length;
-        score += exactMatches * 3;
-
-        const partialMatches = (chunkLower.match(new RegExp(word, 'g')) || []).length - exactMatches;
-        score += partialMatches;
-      });
-
-      if (score > 0) {
-        scoredChunks.push({
-          chunk: `[From ${doc.name}]: ${cleanedChunk}`,
-          score,
-          source: doc.name
-        });
-      }
-    });
-  });
-
-  // Sort globally across all documents and return top N chunks (from multiple files)
-  return scoredChunks
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 10)
-    .map(item => item.chunk);
 };
