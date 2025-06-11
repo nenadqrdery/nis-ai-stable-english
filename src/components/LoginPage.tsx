@@ -132,7 +132,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             <Bot className="w-6 h-6 text-white" />
           </div>
           <div>
-            <CardTitle className="text-xl font-bold text-gray-900">PitajQ</CardTitle>
+            <CardTitle className="text-xl font-bold text-gray-900">Pitaj Q</CardTitle>
             <CardDescription className="text-gray-600 text-sm mt-1">
               Vaš inteligentni asistent za dokumente
             </CardDescription>
