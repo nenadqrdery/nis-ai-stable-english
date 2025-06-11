@@ -21,7 +21,7 @@ export const generateResponse = async (message: string, user: any): Promise<stri
     const token = session.data.session?.access_token;
     if (!token) return "Session missing or expired. Please log in again.";
 
-    // STEP 1: Translate user input (if needed)
+    // STEP 1: Translate query
     const translatedQuery = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -66,23 +66,20 @@ export const generateResponse = async (message: string, user: any): Promise<stri
       .map((m, i) => `=== Dokument ${i + 1} ===\n${m.chunk}`)
       .join('\n\n');
 
-    // STEP 3: Detect script and set prompt language
     const isCyrillic = /[\u0400-\u04FF]/.test(message);
     const language = isCyrillic ? 'ćirilici' : 'latinici';
 
     const systemPrompt = `
-Ti si prijateljski, ali stručan AI asistent zaposlenima na NIS benzinskim stanicama u Srbiji.
-- Govori isključivo na srpskom jeziku, na ${language}.
-- Objašnjavaš jasno i koristiš isključivo podatke iz baze znanja.
-- Kada korisnik traži nastavak, koristi prethodni kontekst i relevantne informacije iz dokumenata.
-
-Baza znanja:
-${formattedDocs || '[Nema dostupnih dokumenata]'}
+Ti si inteligentan i stručan AI koji pomaže korisnicima da razumeju sadržaj dokumenata.
+- Koristi isključivo podatke iz baze znanja prikazane ispod.
+- Ne nagađaj, ne dodaj stvari koje nisu eksplicitno spomenute.
+- Ako nešto nije u dokumentima, reci da nemaš podatke.
+- Piši jasno, ljudski, i koristi isto pismo kao korisnik (${language}).
 `.trim();
 
-    // STEP 4: Build message history
     const messages = [
       { role: 'system', content: systemPrompt },
+      { role: 'user', content: `Ovo su relevantni dokumenti:\n${formattedDocs || '[Nema dostupnih dokumenata]'}` },
       ...(user?.lastInteraction ? [
         { role: 'user', content: user.lastInteraction.user },
         { role: 'assistant', content: user.lastInteraction.assistant }
@@ -90,7 +87,6 @@ ${formattedDocs || '[Nema dostupnih dokumenata]'}
       { role: 'user', content: message }
     ];
 
-    // STEP 5: Call GPT-4o
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -101,7 +97,7 @@ ${formattedDocs || '[Nema dostupnih dokumenata]'}
         model: 'gpt-4o',
         messages,
         temperature: 0.4,
-        max_tokens: 1000,
+        max_tokens: 1200,
         presence_penalty: 0.2,
         frequency_penalty: 0.2
       })
