@@ -1,3 +1,6 @@
+import { supabase } from '@/integrations/supabase/client';
+import { supabaseService } from './supabaseService';
+
 export const generateResponse = async (message: string, user: any): Promise<string> => {
   try {
     const apiKey = await supabaseService.getApiKey();
