@@ -60,7 +60,7 @@ export const generateResponse = async (message: string, user: any): Promise<stri
 
     if (matchRes.ok) {
       const rawText = await matchRes.text();
-      console.log("📦 Match result raw:", rawText); // <== This helps debugging
+      console.log("📦 Match result raw:", rawText);
       const { matches } = JSON.parse(rawText);
       if (Array.isArray(matches) && matches.length > 0) {
         knowledgeBase = matches.map(m => m.chunk).join('\n\n');
@@ -92,7 +92,6 @@ export const generateResponse = async (message: string, user: any): Promise<stri
     const script = isCyrillic ? 'Cyrillic' : 'Latin';
 
     const systemPrompt = `
-const systemPrompt = `
 Ti si stručan i ljubazan AI asistent koji pomaže zaposlenima na benzinskim stanicama kompanije NIS u Srbiji.
 
 Tvoje osobine:
