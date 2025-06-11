@@ -24,7 +24,7 @@ export const generateResponse = async (message: string, user: any): Promise<stri
       return "Session missing or expired. Please log in again.";
     }
 
-    // STEP 1 — Translate user query to English for vector search
+    // STEP 1 — Translate query
     const translatedQuery = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -47,7 +47,7 @@ export const generateResponse = async (message: string, user: any): Promise<stri
       })
     }).then(res => res.json()).then(json => json.choices?.[0]?.message?.content?.trim() || message);
 
-    // STEP 2 — Query Edge Function (now using full Supabase URL)
+    // STEP 2 — Call match_documents
     let knowledgeBase = '';
     const matchRes = await fetch('https://pkqnrxzdgdegbhhlcjtj.supabase.co/functions/v1/match_documents', {
       method: 'POST',
@@ -59,7 +59,9 @@ export const generateResponse = async (message: string, user: any): Promise<stri
     });
 
     if (matchRes.ok) {
-      const { matches } = await matchRes.json();
+      const rawText = await matchRes.text();
+      console.log("📦 Match result raw:", rawText); // <== This helps debugging
+      const { matches } = JSON.parse(rawText);
       if (Array.isArray(matches) && matches.length > 0) {
         knowledgeBase = matches.map(m => m.chunk).join('\n\n');
       } else {
@@ -70,7 +72,7 @@ export const generateResponse = async (message: string, user: any): Promise<stri
       console.warn("❌ match_documents failed:", err);
     }
 
-    // STEP 3 — Detect script and context awareness
+    // STEP 3 — Script + fallback handling
     const normalize = (text: string) => text
       .toLowerCase()
       .normalize("NFD")
@@ -105,7 +107,7 @@ ${knowledgeBase || '[Kontekst je nastavak prethodnog razgovora.]'}
 
 Zapamti: Odgovaraj isključivo na srpskom jeziku, koristeći ${script} pismo.`;
 
-    // STEP 4 — Generate the final response
+    // STEP 4 — Ask OpenAI
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
