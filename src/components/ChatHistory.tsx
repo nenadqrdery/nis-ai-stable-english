@@ -51,7 +51,7 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({
           {chats.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>No chat history yet</p>
+              <p>Nema prethodnih razgovora</p>
               <p className="text-sm">Start a conversation to see it here</p>
             </div>
           ) : (
