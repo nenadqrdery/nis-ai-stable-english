@@ -28,7 +28,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
             <Bot className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-gray-900">Knowledge Bot</h1>
+            <h1 className="text-lg font-bold text-gray-900">PitajQ</h1>
             <p className="text-xs text-gray-600">
               Pozdrav, {user.firstName || user.name}! ({user.role === 'admin' ? 'Administrator' : 'Korisnik'})
             </p>
