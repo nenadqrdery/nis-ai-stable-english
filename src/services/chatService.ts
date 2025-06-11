@@ -112,3 +112,12 @@ Zapamti: Odgovaraj isključivo na srpskom jeziku, koristeći ${script} pismo.`;
     return "Greška prilikom generisanja odgovora. Pokušajte ponovo.";
   }
 };
+
+export const generateChatTitle = (firstMessage: string): string => {
+  const words = firstMessage.split(' ').slice(0, 5);
+  let title = words.join(' ');
+  if (firstMessage.split(' ').length > 5) {
+    title += '...';
+  }
+  return title || 'New Chat';
+};
