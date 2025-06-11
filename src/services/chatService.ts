@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { supabaseService } from './supabaseService';
 
+
 export const generateChatTitle = (firstMessage: string): string => {
   const words = firstMessage.split(' ').slice(0, 5);
   let title = words.join(' ');
