@@ -16,8 +16,8 @@ export const generateResponse = async (message: string, user: any): Promise<stri
       return "I need an OpenAI API key to function. Please ask an admin to configure it in the document upload section.";
     }
 
-    const session = await supabaseService.getSession();
-    const token = session?.access_token;
+    const session = await supabase.auth.getSession();
+    const token = session.data.session?.access_token;
 
     if (!token) {
       return "Session missing or expired. Please log in again.";
@@ -44,7 +44,7 @@ export const generateResponse = async (message: string, user: any): Promise<stri
         ],
         temperature: 0.2
       })
-    }).then(res => res.json()).then(json => json.choices[0].message.content.trim());
+    }).then(res => res.json()).then(json => json.choices?.[0]?.message?.content?.trim() || message);
 
     // STEP 2 — Query the Edge Function to retrieve best chunks
     let knowledgeBase = '';
@@ -60,9 +60,14 @@ export const generateResponse = async (message: string, user: any): Promise<stri
 
     if (matchRes.ok) {
       const { matches } = await matchRes.json();
-      knowledgeBase = matches.map(m => m.chunk).join('\n\n');
+      if (Array.isArray(matches) && matches.length > 0) {
+        knowledgeBase = matches.map(m => m.chunk).join('\n\n');
+      } else {
+        console.warn("⚠️ No matches returned for query.");
+      }
     } else {
-      console.warn("⚠️ Failed to fetch matched chunks from match_documents.");
+      const err = await matchRes.text();
+      console.warn("❌ match_documents failed:", err);
     }
 
     // STEP 3 — Build proper Serbian response logic
