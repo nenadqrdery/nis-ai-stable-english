@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface DocumentData {
@@ -162,5 +161,15 @@ export const supabaseService = {
       });
     
     if (error) throw error;
+  },
+
+  // 🔐 Session (Required for edge function authorization)
+  async getSession() {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      console.error('Session error:', error.message);
+      throw error;
+    }
+    return data.session;
   }
 };
