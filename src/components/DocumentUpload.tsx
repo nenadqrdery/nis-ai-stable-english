@@ -132,14 +132,20 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ onClose }) => {
 const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
 
 if (sessionError || !sessionData?.session?.access_token) {
-  toast.error("User session missing or expired — please log in again");
+  toast.error("No valid session found. Please log in again.");
   console.error("Session error:", sessionError);
   return;
 }
 
 const token = sessionData.session.access_token;
 
-console.log("Token being used:", token); // 🔍 Debug: see token in dev console
+if (!token) {
+  toast.error("Missing token, user may be unauthenticated.");
+  console.error("No token returned from Supabase.");
+  return;
+}
+
+console.log("🟢 Supabase Access Token:", token); // ✅ Check this in Dev Console
 
 const res = await fetch("https://pkqnrxzdgdegbhhlcjtj.supabase.co/functions/v1/embed", {
   method: "POST",
@@ -152,6 +158,13 @@ const res = await fetch("https://pkqnrxzdgdegbhhlcjtj.supabase.co/functions/v1/e
     content: text
   })
 });
+
+if (!res.ok) {
+  const errorText = await res.text();
+  console.error("❌ Embed error:", errorText);
+  toast.error(`Upload failed: ${errorText}`);
+  return;
+}
 
 if (!res.ok) {
   const errorText = await res.text();
