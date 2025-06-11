@@ -112,7 +112,19 @@ ${knowledgeBase || '[Kontekst je nastavak prethodnog razgovora.]'}
 
 Odgovaraj jasno, korisno i sa razumevanjem teme.`;
 
-    // STEP 4 — Ask OpenAI
+    // STEP 4 — Build context-aware message history
+    const contextHistory = [
+      { role: 'system', content: systemPrompt }
+    ];
+
+    if (user?.lastInteraction) {
+      contextHistory.push({ role: 'user', content: user.lastInteraction.user });
+      contextHistory.push({ role: 'assistant', content: user.lastInteraction.assistant });
+    }
+
+    contextHistory.push({ role: 'user', content: message });
+
+    // STEP 5 — Ask OpenAI
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -121,10 +133,7 @@ Odgovaraj jasno, korisno i sa razumevanjem teme.`;
       },
       body: JSON.stringify({
         model: 'gpt-3.5-turbo',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: message }
-        ],
+        messages: contextHistory,
         temperature: 0.7,
         max_tokens: 1000,
         presence_penalty: 0.1,
