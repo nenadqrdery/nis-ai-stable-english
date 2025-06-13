@@ -125,14 +125,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 py-6 bg-white">
-      <Card className="w-full max-w-md bg-white border-2 border-black shadow-none">
+    <div className="min-h-screen flex items-center justify-center p-4 py-6">
+      <Card className="w-full max-w-md bg-white/95 backdrop-blur-sm shadow-2xl">
         <CardHeader className="text-center space-y-3 pb-4">
-          <div className="mx-auto w-12 h-12 bg-black rounded-full flex items-center justify-center">
+          <div className="mx-auto w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
             <Bot className="w-6 h-6 text-white" />
           </div>
           <div>
-            <CardTitle className="text-xl font-bold text-black">Pitaj Q</CardTitle>
+            <CardTitle className="text-xl font-bold text-gray-900">Pitaj Q</CardTitle>
             <CardDescription className="text-gray-600 text-sm mt-1">
               Vaš inteligentni asistent za dokumente
             </CardDescription>
@@ -142,10 +142,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         <CardContent className="space-y-4 pb-6">
           {/* Toggle Slider */}
           <div className="relative">
-            <div className="flex items-center justify-between bg-gray-100 rounded-full p-1 relative border border-gray-300">
+            <div className="flex items-center justify-between bg-gray-100 rounded-full p-1 relative">
               {/* Sliding background */}
               <div 
-                className={`absolute top-1 h-8 w-1/2 bg-black rounded-full transition-transform duration-300 ease-in-out ${
+                className={`absolute top-1 h-8 w-1/2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full transition-transform duration-300 ease-in-out ${
                   isSignUp ? 'translate-x-full' : 'translate-x-0'
                 }`}
               />
@@ -155,7 +155,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 type="button"
                 onClick={() => setIsSignUp(false)}
                 className={`relative z-10 flex-1 py-2 px-4 text-sm font-medium rounded-full transition-colors duration-300 flex items-center justify-center ${
-                  !isSignUp ? 'text-white' : 'text-gray-600 hover:text-black'
+                  !isSignUp ? 'text-white' : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 Prijavljivanje
@@ -165,7 +165,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 type="button"
                 onClick={() => setIsSignUp(true)}
                 className={`relative z-10 flex-1 py-2 px-4 text-sm font-medium rounded-full transition-colors duration-300 flex items-center justify-center ${
-                  isSignUp ? 'text-white' : 'text-gray-600 hover:text-black'
+                  isSignUp ? 'text-white' : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 Registracija
@@ -178,7 +178,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             {isSignUp ? (
               <div>
                 <div className="text-center mb-4">
-                  <h2 className="text-lg font-semibold text-black mb-1">Registracija</h2>
+                  <h2 className="text-lg font-semibold text-gray-900 mb-1">Registracija</h2>
                   <p className="text-gray-600 text-sm">
                     Kreirajte novi nalog da pristupite chatbotu
                   </p>
@@ -187,7 +187,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 <form onSubmit={handleSignUp} className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <Label htmlFor="firstName" className="text-black font-medium text-sm">Ime</Label>
+                      <Label htmlFor="firstName" className="text-gray-700 font-medium text-sm">Ime</Label>
                       <div className="relative">
                         <UserIcon className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                         <Input
@@ -196,14 +196,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                           placeholder="Vaše ime"
                           value={signUpData.firstName}
                           onChange={(e) => setSignUpData({ ...signUpData, firstName: e.target.value })}
-                          className="pl-10 h-10 border-black focus:border-black focus:ring-black text-sm"
+                          className="pl-10 h-10 border-gray-200 focus:border-purple-500 focus:ring-purple-500 text-sm"
                           required
                         />
                       </div>
                     </div>
                     
                     <div className="space-y-1">
-                      <Label htmlFor="lastName" className="text-black font-medium text-sm">Prezime</Label>
+                      <Label htmlFor="lastName" className="text-gray-700 font-medium text-sm">Prezime</Label>
                       <div className="relative">
                         <UserIcon className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                         <Input
@@ -212,7 +212,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                           placeholder="Vaše prezime"
                           value={signUpData.lastName}
                           onChange={(e) => setSignUpData({ ...signUpData, lastName: e.target.value })}
-                          className="pl-10 h-10 border-black focus:border-black focus:ring-black text-sm"
+                          className="pl-10 h-10 border-gray-200 focus:border-purple-500 focus:ring-purple-500 text-sm"
                           required
                         />
                       </div>
@@ -220,7 +220,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                   </div>
                   
                   <div className="space-y-1">
-                    <Label htmlFor="signupEmail" className="text-black font-medium text-sm">Email</Label>
+                    <Label htmlFor="signupEmail" className="text-gray-700 font-medium text-sm">Email</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input
@@ -229,14 +229,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                         placeholder="Unesite email"
                         value={signUpData.email}
                         onChange={(e) => setSignUpData({ ...signUpData, email: e.target.value })}
-                        className="pl-10 h-10 border-black focus:border-black focus:ring-black text-sm"
+                        className="pl-10 h-10 border-gray-200 focus:border-purple-500 focus:ring-purple-500 text-sm"
                         required
                       />
                     </div>
                   </div>
                   
                   <div className="space-y-1">
-                    <Label htmlFor="signupPassword" className="text-black font-medium text-sm">Lozinka</Label>
+                    <Label htmlFor="signupPassword" className="text-gray-700 font-medium text-sm">Lozinka</Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input
@@ -245,7 +245,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                         placeholder="Unesite lozinku"
                         value={signUpData.password}
                         onChange={(e) => setSignUpData({ ...signUpData, password: e.target.value })}
-                        className="pl-10 h-10 border-black focus:border-black focus:ring-black text-sm"
+                        className="pl-10 h-10 border-gray-200 focus:border-purple-500 focus:ring-purple-500 text-sm"
                         required
                       />
                     </div>
@@ -253,7 +253,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                   
                   <Button 
                     type="submit" 
-                    className="w-full h-10 bg-black hover:bg-gray-800 text-white font-medium rounded-lg transition-all duration-200 transform hover:scale-[1.02] mt-4"
+                    className="w-full h-10 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-200 transform hover:scale-[1.02] mt-4"
                     disabled={isLoading}
                   >
                     {isLoading ? 'Registruje se...' : 'Registruj se'}
@@ -263,7 +263,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             ) : (
               <div>
                 <div className="text-center mb-4">
-                  <h2 className="text-lg font-semibold text-black mb-1">Prijavljivanje</h2>
+                  <h2 className="text-lg font-semibold text-gray-900 mb-1">Prijavljivanje</h2>
                   <p className="text-gray-600 text-sm">
                     Unesite podatke da pristupite chatbotu
                   </p>
@@ -271,7 +271,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 
                 <form onSubmit={handleLogin} className="space-y-3">
                   <div className="space-y-1">
-                    <Label htmlFor="loginEmail" className="text-black font-medium text-sm">Email</Label>
+                    <Label htmlFor="loginEmail" className="text-gray-700 font-medium text-sm">Email</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input
@@ -280,14 +280,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                         placeholder="Unesite email"
                         value={loginData.email}
                         onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                        className="pl-10 h-10 border-black focus:border-black focus:ring-black text-sm"
+                        className="pl-10 h-10 border-gray-200 focus:border-purple-500 focus:ring-purple-500 text-sm"
                         required
                       />
                     </div>
                   </div>
                   
                   <div className="space-y-1">
-                    <Label htmlFor="loginPassword" className="text-black font-medium text-sm">Lozinka</Label>
+                    <Label htmlFor="loginPassword" className="text-gray-700 font-medium text-sm">Lozinka</Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input
@@ -296,7 +296,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                         placeholder="Unesite lozinku"
                         value={loginData.password}
                         onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                        className="pl-10 h-10 border-black focus:border-black focus:ring-black text-sm"
+                        className="pl-10 h-10 border-gray-200 focus:border-purple-500 focus:ring-purple-500 text-sm"
                         required
                       />
                     </div>
@@ -304,7 +304,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                   
                   <Button 
                     type="submit" 
-                    className="w-full h-10 bg-black hover:bg-gray-800 text-white font-medium rounded-lg transition-all duration-200 transform hover:scale-[1.02] mt-4"
+                    className="w-full h-10 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-200 transform hover:scale-[1.02] mt-4"
                     disabled={isLoading}
                   >
                     {isLoading ? 'Prijavljivanje...' : 'Prijavite se'}
@@ -313,7 +313,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                   <Button
                     type="button"
                     variant="ghost"
-                    className="w-full text-sm text-black hover:text-gray-800 mt-2"
+                    className="w-full text-sm text-purple-600 hover:text-purple-700 mt-2"
                     onClick={handleForgotPassword}
                   >
                     Zaboravili ste lozinku?
