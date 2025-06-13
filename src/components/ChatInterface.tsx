@@ -173,7 +173,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ user, onLogout }) => {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-white overflow-hidden">
+    <div className="h-screen flex flex-col bg-white dark:bg-gray-900 overflow-hidden">
       {/* Fixed Header */}
       <div className="flex-shrink-0">
         <ChatHeader

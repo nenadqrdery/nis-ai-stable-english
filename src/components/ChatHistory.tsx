@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,9 +35,9 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <Card className="w-full max-w-md bg-white max-h-[80vh] flex flex-col">
+      <Card className="w-full max-w-md bg-white dark:bg-gray-900 max-h-[80vh] flex flex-col">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle className="text-lg flex items-center">
+          <CardTitle className="text-lg flex items-center text-gray-900 dark:text-gray-100">
             <MessageSquare className="w-5 h-5 mr-2" />
             Istorija razgovora
           </CardTitle>
@@ -46,42 +45,31 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({
             <X className="w-4 h-4" />
           </Button>
         </CardHeader>
-        
-        <CardContent className="flex-1 overflow-y-auto space-y-2">
-          {chats.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>Nema prethodnih razgovora</p>
-              <p className="text-sm">Start a conversation to see it here</p>
-            </div>
-          ) : (
-            chats.map((chat) => (
-              <div
+        <CardContent className="flex-1 overflow-y-auto">
+          <div className="space-y-2">
+            {chats.map((chat) => (
+              <Button
                 key={chat.id}
-                className={`p-3 rounded-lg border cursor-pointer transition-colors hover:bg-gray-50 ${
-                  chat.id === currentChatId ? 'bg-blue-50 border-blue-200' : 'border-gray-200'
+                variant="ghost"
+                className={`w-full justify-start text-left ${
+                  chat.id === currentChatId
+                    ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
                 }`}
                 onClick={() => onSelectChat(chat)}
               >
-                <div className="flex items-start justify-between">
+                <div className="flex items-center justify-between w-full">
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-gray-900 truncate">
-                      {chat.title}
-                    </h4>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {chat.messages.length} message{chat.messages.length !== 1 ? 's' : ''}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {formatDate(chat.updatedAt)}
+                    <p className="truncate">{chat.title}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {formatDate(chat.createdAt)}
                     </p>
                   </div>
-                  {chat.id === currentChatId && (
-                    <div className="ml-2 w-2 h-2 bg-blue-500 rounded-full"></div>
-                  )}
+                  <Trash2 className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                 </div>
-              </div>
-            ))
-          )}
+              </Button>
+            ))}
+          </div>
         </CardContent>
       </Card>
     </div>
