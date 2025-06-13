@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -5,7 +6,7 @@ import { Send } from 'lucide-react';
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
-  disabled?: boolean;
+  disabled: boolean;
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled }) => {
@@ -24,7 +25,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled }) => {
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit(e);
@@ -40,27 +41,28 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled }) => {
   }, [message]);
 
   return (
-    <form onSubmit={handleSubmit} className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
-      <div className="flex items-end space-x-2">
-        <Textarea
-          ref={textareaRef}
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Unesite poruku..."
-          className="min-h-[60px] resize-none bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
-          disabled={disabled}
-        />
+    <div className="border-t border-white/20 bg-white/95 backdrop-blur-sm p-4">
+      <form onSubmit={handleSubmit} className="flex items-end space-x-3">
+        <div className="flex-1">
+          <Textarea
+            ref={textareaRef}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Reci šta te zanima"
+            className="min-h-[48px] max-h-[120px] resize-none border-gray-200 focus:border-purple-500 focus:ring-purple-500 rounded-lg"
+            disabled={disabled}
+          />
+        </div>
         <Button
           type="submit"
-          size="icon"
           disabled={!message.trim() || disabled}
-          className="h-[60px] w-[60px] bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white"
+          className="h-12 w-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg flex-shrink-0"
         >
-          <Send className="h-5 w-5" />
+          <Send className="w-4 h-4" />
         </Button>
-      </div>
-    </form>
+      </form>
+    </div>
   );
 };
 
