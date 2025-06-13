@@ -19,9 +19,12 @@ export const generateResponse = async (message: string, user: any): Promise<stri
 
     const session = await supabase.auth.getSession();
     const token = session.data.session?.access_token;
-    if (!token) return "Session missing or expired. Please log in again.";
 
-    // STEP 1: Translate query
+    if (!token) {
+      return "Session missing or expired. Please log in again.";
+    }
+
+    // STEP 1 — Translate query
     const translatedQuery = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -44,7 +47,8 @@ export const generateResponse = async (message: string, user: any): Promise<stri
       })
     }).then(res => res.json()).then(json => json.choices?.[0]?.message?.content?.trim() || message);
 
-    // STEP 2: Match documents
+    // STEP 2 — Call match_documents
+    let knowledgeBase = '';
     const matchRes = await fetch('https://pkqnrxzdgdegbhhlcjtj.supabase.co/functions/v1/match_documents', {
       method: 'POST',
       headers: {
@@ -54,39 +58,73 @@ export const generateResponse = async (message: string, user: any): Promise<stri
       body: JSON.stringify({ query: translatedQuery })
     });
 
-    let matches: any[] = [];
     if (matchRes.ok) {
       const rawText = await matchRes.text();
-      const parsed = JSON.parse(rawText);
-      matches = parsed.matches ?? [];
+      console.log("📦 Match result raw:", rawText);
+      const { matches } = JSON.parse(rawText);
+      if (Array.isArray(matches) && matches.length > 0) {
+        knowledgeBase = matches.map(m => m.chunk).join('\n\n');
+      } else {
+        console.warn("⚠️ No document matches found.");
+      }
+    } else {
+      const err = await matchRes.text();
+      console.warn("❌ match_documents failed:", err);
     }
 
-    const formattedDocs = matches
-      .slice(0, 5)
-      .map((m, i) => `=== Dokument ${i + 1} ===\n${m.chunk}`)
-      .join('\n\n');
+    // STEP 3 — Script + fallback handling
+    const normalize = (text: string) => text
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, '')
+      .replace(/[^a-z\s]/gi, '')
+      .trim();
+
+    const normalized = normalize(message);
+    const followUpTriggers = ['jos', 'nastavi', 'dalje', 'daj jos', 'nastavi dalje'];
+    const isFollowUp = followUpTriggers.some(trigger => normalized.includes(trigger));
+
+    if (!knowledgeBase.trim() && !isFollowUp) {
+      return "Još uvek nemam nijedan dokument u svojoj bazi znanja. Zamolite administratora da doda dokumente kako bih mogao da pomažem korisnicima na osnovu njihovog sadržaja.";
+    }
 
     const isCyrillic = /[\u0400-\u04FF]/.test(message);
-    const language = isCyrillic ? 'ćirilici' : 'latinici';
+    const script = isCyrillic ? 'Cyrillic' : 'Latin';
 
-    const systemPrompt = `
-Ti si inteligentan i stručan AI koji pomaže korisnicima da razumeju sadržaj dokumenata.
-- Koristi isključivo podatke iz baze znanja prikazane ispod.
-- Ne nagađaj, ne dodaj stvari koje nisu eksplicitno spomenute.
-- Ako nešto nije u dokumentima, reci da nemaš podatke.
-- Piši jasno, ljudski, i koristi isto pismo kao korisnik (${language}).
-`.trim();
+const systemPrompt = `
+Ti si stručan i prijateljski AI asistent zaposlenima na NIS benzinskim stanicama u Srbiji.
 
-    const messages = [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: `Ovo su relevantni dokumenti:\n${formattedDocs || '[Nema dostupnih dokumenata]'}` },
-      ...(user?.lastInteraction ? [
-        { role: 'user', content: user.lastInteraction.user },
-        { role: 'assistant', content: user.lastInteraction.assistant }
-      ] : []),
-      { role: 'user', content: message }
+Tvoje osobine:
+- Razumeš kontekst prethodnih poruka i nastavljaš razgovor prirodno.
+- Kada korisnik traži pojašnjenje ili nastavak (npr. "pričaj još", "objasni", "o toj temi"), koristi relevantne informacije iz baze znanja.
+- Ne kopiraš tekstove doslovno, već ih prenosiš jasno, kao kolega koji objašnjava stvar.
+- Kada neko ne zna kako da formuliše pitanje, ti im pomažeš da ga preciziraju.
+
+Pravila:
+- Odgovaraj isključivo na srpskom jeziku.
+- Ako korisnik koristi ćirilicu, i ti koristiš ćirilicu.
+- Ako koristi latinicu, koristi i ti latinicu.
+- Nikada ne koristi engleski jezik.
+- Informacije crpi samo iz baze znanja ispod.
+
+Baza znanja:
+${knowledgeBase || '[Nema dostupnog konteksta.]'}
+
+Odgovaraj jasno, korisno, i ljudski — kao kolega koji zna proceduru, ali i razume osobu kojoj pomaže.`;
+
+    // STEP 4 — Build context-aware message history
+    const contextHistory = [
+      { role: 'system', content: systemPrompt }
     ];
 
+    if (user?.lastInteraction) {
+      contextHistory.push({ role: 'user', content: user.lastInteraction.user });
+      contextHistory.push({ role: 'assistant', content: user.lastInteraction.assistant });
+    }
+
+    contextHistory.push({ role: 'user', content: message });
+
+    // STEP 5 — Ask OpenAI
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -94,12 +132,12 @@ Ti si inteligentan i stručan AI koji pomaže korisnicima da razumeju sadržaj d
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
-        messages,
-        temperature: 0.4,
-        max_tokens: 1200,
-        presence_penalty: 0.2,
-        frequency_penalty: 0.2
+        model: 'gpt-3.5-turbo',
+        messages: contextHistory,
+        temperature: 0.7,
+        max_tokens: 1000,
+        presence_penalty: 0.1,
+        frequency_penalty: 0.1
       })
     });
 

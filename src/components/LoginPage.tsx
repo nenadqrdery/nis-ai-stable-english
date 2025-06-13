@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bot, Mail, Lock, User as UserIcon } from 'lucide-react';
+import { Mail, Lock, User as UserIcon } from 'lucide-react';
 import { User, SignUpData } from '../types/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { supabaseService } from '../services/supabaseService';
@@ -128,8 +127,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     <div className="min-h-screen flex items-center justify-center p-4 py-6">
       <Card className="w-full max-w-md bg-white/95 backdrop-blur-sm shadow-2xl">
         <CardHeader className="text-center space-y-3 pb-4">
-          <div className="mx-auto w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-            <Bot className="w-6 h-6 text-white" />
+          <div className="mx-auto w-12 h-12 rounded-full flex items-center justify-center">
+            <img 
+              src="/lovable-uploads/a66ddc38-0656-4ac4-8644-18375ce5a131.png" 
+              alt="Pitaj Q Logo" 
+              className="w-12 h-12 object-contain"
+            />
           </div>
           <div>
             <CardTitle className="text-xl font-bold text-gray-900">Pitaj Q</CardTitle>
